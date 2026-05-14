@@ -397,6 +397,7 @@
       <button class="subtab" data-subtab="update">Update PPM</button>
       <button class="subtab" data-subtab="jobplan">Job Plans</button>
       <button class="subtab" data-subtab="jobplanv2">Job Plans V2</button>
+      <button class="subtab" data-subtab="routes">Routes</button>
     </div>
   </div>
 
@@ -766,6 +767,79 @@
     </div>
   </div>
 
+  <!-- ===== Routes sub-tab (under PPM) ===== -->
+  <div id="tabRoutes" class="tab-panel hidden">
+    <div class="panel" style="padding: 12px 14px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+        <div>
+          <h3 style="margin:0 0 4px;">Routes</h3>
+          <p class="muted small" style="margin:0;">A Route raises one work order against multiple assets in a defined sequence. Two sheets: <b>Add Routes</b> creates the route shell, <b>Asset Association</b> attaches each asset to a route at a given sequence.</p>
+        </div>
+        <div class="card-actions" style="margin:0;">
+          <button class="btn ghost" id="btnRouteTemplate">Template</button>
+          <button class="btn ghost" id="btnRouteUpload">Upload</button>
+          <input type="file" id="routeExcelInput" accept=".xlsx,.xls,.csv" style="display:none" />
+          <button class="btn" id="btnRouteNewRow">+ New row</button>
+          <button class="btn secondary" id="btnRouteValidate">Validate all</button>
+          <button class="btn success" id="btnRouteImport">Import all</button>
+          <button class="btn ghost" id="btnRouteRemoveDone">Remove imported</button>
+          <button class="btn ghost" id="btnRouteClearAll">Clear all</button>
+        </div>
+      </div>
+
+      <details class="help" open style="margin-top:12px;">
+        <summary>Defaults</summary>
+        <div class="help-body">
+          <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+            <label class="field" style="flex:0 0 200px; margin:0;">
+              <span class="lbl">Routes Form ID *</span>
+              <input id="routeDefFormId" placeholder="(discovering…)" />
+            </label>
+            <label class="field" style="flex:0 0 200px; margin:0;">
+              <span class="lbl">Routes Module ID *</span>
+              <input id="routeDefModuleId" placeholder="e.g. 186479" />
+            </label>
+            <button class="btn ghost" id="btnRouteDiscover">Re-discover</button>
+            <button class="btn ghost" id="btnRouteDefaultsSave">Save</button>
+            <span class="muted small" id="routeDefaultsStatus"></span>
+          </div>
+          <p class="muted small" style="margin:8px 0 0;"><b>Form ID</b> auto-fetches from your <code>routes</code> module. <b>Module ID</b> is the numeric module ID for routes (find it in a captured POST under <code>parentModuleId</code>) — used when attaching assets.</p>
+        </div>
+      </details>
+
+      <details class="help" style="margin-top: 6px;">
+        <summary>Paste rows from Excel</summary>
+        <div class="help-body">
+          Add Routes recognises: Route Name, Description, Site.<br/>
+          Asset Association recognises: Route (name or ID), Asset (name or ID), Sequence, Description.
+          <textarea id="routeBulkPaste" placeholder="Paste rows here..." style="height:90px; margin-top:8px;"></textarea>
+          <div class="card-actions" style="margin-top:6px;">
+            <button class="btn" id="btnRouteBulkParse">Parse &amp; add</button>
+            <button class="btn ghost" id="btnRouteBulkClear">Clear paste box</button>
+          </div>
+        </div>
+      </details>
+
+      <div class="freq-tabs" id="routeInnerTabs" style="display:flex; gap:0; margin-top:12px; border-bottom:1px solid var(--line);">
+        <button class="freq-tab active" data-routeinner="routes">Add Routes</button>
+        <button class="freq-tab" data-routeinner="assoc">Asset Association</button>
+      </div>
+    </div>
+
+    <div class="panel" style="padding: 0;">
+      <div class="grid-scroll">
+        <table class="grid" id="routeGrid">
+          <thead><tr id="routeGridHead"></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div style="padding: 10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+        <span class="muted small" id="routeRowCount">0 rows</span>
+        <button class="btn ghost" id="btnRouteNewRow2">+ Add row</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Inventory Tab ===== -->
   <div id="tabInventory" class="tab-panel hidden">
     <div class="panel" style="padding: 12px 14px;">
@@ -1037,6 +1111,7 @@
       <button class="subtab active" data-inspsub="templates">Templates</button>
       <button class="subtab" data-inspsub="triggers">Triggers</button>
       <button class="subtab" data-inspsub="qanda">Q&amp;A</button>
+      <button class="subtab" data-inspsub="scoring">Scoring</button>
     </div>
 
     <div id="inspSubTemplates">
@@ -1222,6 +1297,69 @@
         <div style="padding: 10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
           <span class="muted small" id="inspQaRowCount">0 rows</span>
           <button class="btn ghost" id="btnInspQaNewRow2">+ Add row</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Scoring sub-tab ===== -->
+    <div id="inspSubScoring" class="hidden">
+      <div class="panel" style="padding: 12px 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3 style="margin:0 0 4px;">Scoring Rules</h3>
+            <p class="muted small" style="margin:0;">Attach scoring rules to questions on an existing template. One grid row = one condition. Rows are grouped by Template ID &rarr; Question ID at import time and sent as a single <code>{rules:[...]}</code> POST per template.</p>
+          </div>
+          <div class="card-actions" style="margin:0;">
+            <button class="btn ghost" id="btnInspScoreTemplate">Template</button>
+            <button class="btn ghost" id="btnInspScoreUpload">Upload</button>
+            <input type="file" id="inspScoreExcelInput" accept=".xlsx,.xls,.csv" style="display:none" />
+            <button class="btn" id="btnInspScoreNewRow">+ New row</button>
+            <button class="btn secondary" id="btnInspScoreValidate">Validate all</button>
+            <button class="btn success" id="btnInspScoreImport">Import all</button>
+            <button class="btn ghost" id="btnInspScoreRemoveDone">Remove imported</button>
+            <button class="btn ghost" id="btnInspScoreClearAll">Clear all</button>
+          </div>
+        </div>
+
+        <details class="help" open style="margin-top:12px;">
+          <summary>Load scorable questions from a template</summary>
+          <div class="help-body">
+            <p class="muted small" style="margin:0 0 8px;">Paste one or more Template IDs (comma-separated) and click <b>Load</b>. We'll fetch the templates, walk their pages and questions, and pre-populate the grid with only the question types that support scoring (Single/Multi Select, Number, Decimal, Date/Time). For option-type questions, one row per option is pre-filled with the option's ID and label — you just fill in the Score.</p>
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+              <label class="field" style="flex:1 1 280px; margin:0;">
+                <span class="lbl">Template ID(s) *</span>
+                <input id="inspScoreLoadIds" placeholder="e.g. 2228 or 2228, 1738" />
+              </label>
+              <button class="btn" id="btnInspScoreLoad">Load Questions</button>
+              <span class="muted small" id="inspScoreLoadStatus"></span>
+            </div>
+            <p class="muted small" style="margin-top:8px;"><b>Operator codes</b>: <code>9</code> = less than, <code>11</code> = greater than, <code>20</code> = on date. Pull exact codes from a DevTools capture if you need other operators.</p>
+          </div>
+        </details>
+
+        <details class="help" style="margin-top: 6px;">
+          <summary>Paste rows from Excel</summary>
+          <div class="help-body">
+            Recognised columns: Template ID, Question ID, Question Type, Option ID, Option Label, Value, Operator, Score, Sequence.
+            <textarea id="inspScoreBulkPaste" placeholder="Paste rows here..." style="height:90px; margin-top:8px;"></textarea>
+            <div class="card-actions" style="margin-top:6px;">
+              <button class="btn" id="btnInspScoreBulkParse">Parse &amp; add</button>
+              <button class="btn ghost" id="btnInspScoreBulkClear">Clear paste box</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="panel" style="padding: 0;">
+        <div class="grid-scroll">
+          <table class="grid" id="inspScoreGrid">
+            <thead><tr id="inspScoreGridHead"></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div style="padding: 10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+          <span class="muted small" id="inspScoreRowCount">0 rows</span>
+          <button class="btn ghost" id="btnInspScoreNewRow2">+ Add row</button>
         </div>
       </div>
     </div>
@@ -5404,9 +5542,12 @@ function bindGridInputs(tableSel, queueFn, columnsFn, blankFn, rerender) {
   tbl.addEventListener("input", e => syncInput(e.target));
   tbl.addEventListener("change", e => {
     syncInput(e.target);
-    // When Category / Scope Category dropdown changes, re-render so the
-    // dependent scopeCategory cell can pick up the right datalist.
-    if (e.target.dataset.field === "category" || e.target.dataset.field === "scopeKind") {
+    // When Category / Scope Category / Question Type dropdown changes,
+    // re-render so dependent cells update (datalists for scopeCategory,
+    // gray-out for irrelevant Q&A fields based on questionType, etc.).
+    if (e.target.dataset.field === "category"
+        || e.target.dataset.field === "scopeKind"
+        || e.target.dataset.field === "questionType") {
       rerender();
     }
   });
@@ -6423,6 +6564,7 @@ function switchTab(name) {
   $("#tabUpdate").classList.toggle("hidden", name !== "ppm" || ppmSub !== "update");
   $("#tabJobplan")?.classList.toggle("hidden", name !== "ppm" || ppmSub !== "jobplan");
   $("#tabJobplanV2")?.classList.toggle("hidden", name !== "ppm" || ppmSub !== "jobplanv2");
+  $("#tabRoutes")?.classList.toggle("hidden", name !== "ppm" || ppmSub !== "routes");
 
   // When Inventory is active, show selected inventory sub-tab and run discovery once.
   if (name === "inventory") {
@@ -6440,8 +6582,13 @@ function switchPpmSub(sub) {
   $("#tabUpdate").classList.toggle("hidden", sub !== "update");
   $("#tabJobplan")?.classList.toggle("hidden", sub !== "jobplan");
   $("#tabJobplanV2")?.classList.toggle("hidden", sub !== "jobplanv2");
+  $("#tabRoutes")?.classList.toggle("hidden", sub !== "routes");
   if (sub === "jobplan") renderJpQueue();
   if (sub === "jobplanv2") renderJpv2Queue();
+  if (sub === "routes") {
+    try { autoDiscoverRouteForm(); } catch (_) {}
+    if (typeof renderRouteQueue === "function") renderRouteQueue();
+  }
 }
 
 // (Old form-visibility sync helpers removed — the grid handles all input now.)
@@ -9459,8 +9606,10 @@ state.inspQaQueue = state.inspQaQueue || [];
 const INSP_QA_COLUMNS = [
   { key:"_num",         label:"#",                kind:"num",     width:"w-num",    sticky:true },
   { key:"_status",      label:"Status",           kind:"status",  width:"w-status", sticky:true },
-  { key:"pageId",       label:"Page ID *",        kind:"text",    width:"w-sm",
-    placeholder:"the qandaPage ID" },
+  { key:"templateId",   label:"Template ID *",    kind:"text",    width:"w-sm",
+    placeholder:"required" },
+  { key:"page",         label:"Page *",           kind:"text",    width:"w-md",
+    placeholder:"name or numeric ID" },
   { key:"question",     label:"Question *",       kind:"text",    width:"w-lg" },
   { key:"questionType", label:"Type *",           kind:"select",  width:"w-md",
     options: INSP_QA_TYPES.map(t => ({ v: t.key, l: t.label })) },
@@ -9478,20 +9627,29 @@ const INSP_QA_COLUMNS = [
   { key:"displayType",  label:"Display",          kind:"select",  width:"w-sm",
     options:[{v:"",l:""},{v:"radio",l:"Radio"},{v:"checkbox",l:"Checkbox"}],
     placeholder:"Multi Select only" },
-  { key:"commentsLabel", label:"Comments Label",  kind:"text",    width:"w-sm",
-    placeholder:"defaults to Remarks" },
-  { key:"position",     label:"Position",         kind:"text",    width:"w-sm",
-    placeholder:"auto" },
+  { key:"showRemarks",  label:"Remarks?",         kind:"select",  width:"w-sm",
+    options:[{v:"yes",l:"Yes"},{v:"no",l:"No"}] },
+  { key:"commentsLabel", label:"Remarks Label",   kind:"text",    width:"w-sm",
+    placeholder:"defaults to 'Remarks'" },
+  { key:"showAttachments", label:"Attachments?",  kind:"select",  width:"w-sm",
+    options:[{v:"yes",l:"Yes"},{v:"no",l:"No"}] },
+  { key:"attachmentLabel", label:"Attachment Label", kind:"text", width:"w-sm",
+    placeholder:"defaults to 'Attachments'" },
+  { key:"position",     label:"Sl No",            kind:"text",    width:"w-sm",
+    placeholder:"auto — 1, 2, 3…" },
   { key:"_recordId",    label:"Question ID",      kind:"readonly",width:"w-sm" },
   { key:"_actions",     label:"",                 kind:"actions", width:"w-actions" }
 ];
 
 function blankInspQaRow() {
   return {
-    pageId:"", question:"", questionType:"SHORT_ANSWER",
+    templateId:"", page:"", question:"", questionType:"SHORT_ANSWER",
     description:"", mandatory:"yes", placeHolder:"",
     options:"", showTime:"yes", maxLength:"",
-    displayType:"", commentsLabel:"", position:"",
+    displayType:"",
+    showRemarks:"yes", commentsLabel:"",
+    showAttachments:"yes", attachmentLabel:"",
+    position:"",
     _recordId:""
   };
 }
@@ -9535,9 +9693,24 @@ function renderInspQaQueue() {
   buildGridHead(head, cols);
   const queue = inspQaActiveQueue();
   const tbody = $("#inspQaGrid tbody");
-  tbody.innerHTML = queue.map((row, idx) =>
-    `<tr>` + cols.map(c => renderCell(c, row, idx)).join("") + `</tr>`
-  ).join("");
+  const isQuestionSheet = state.activeInspQaInner !== "pages";
+  tbody.innerHTML = queue.map((row, idx) => {
+    // For the Questions sheet: gray out cells that don't apply to this row's
+    // Question Type. The Pages sheet skips this entirely (no type column).
+    const typeFields = (isQuestionSheet && row.questionType)
+      ? new Set(INSP_QA_FIELD_RELEVANCE[row.questionType] || [])
+      : null;
+    return `<tr>` + cols.map(c => {
+      let html = renderCell(c, row, idx);
+      if (typeFields && !INSP_QA_TYPE_AGNOSTIC_KEYS.has(c.key) && !typeFields.has(c.key)) {
+        // Inject .qa-cell-na onto the <td>
+        html = /<td class="/.test(html)
+          ? html.replace(/<td class="/, '<td title="Not applicable for ' + row.questionType + '" class="qa-cell-na ')
+          : html.replace(/<td/, '<td title="Not applicable for ' + row.questionType + '" class="qa-cell-na"');
+      }
+      return html;
+    }).join("") + `</tr>`;
+  }).join("");
   $("#inspQaRowCount").textContent = `${queue.length} row${queue.length === 1 ? "" : "s"}`;
   $$("#inspQaInnerTabs .freq-tab").forEach(b =>
     b.classList.toggle("active", b.dataset.qainner === state.activeInspQaInner));
@@ -9558,29 +9731,73 @@ async function validateInspQaPageRow(row) {
 // Pages have been imported.
 state.inspQaPagesByTemplate = state.inspQaPagesByTemplate || {};
 
+// Resolve a Page reference (name, "Page N", position number, or numeric ID)
+// to its actual Facilio page ID for a given template.
+// Examples for a template whose pages are [{id:2202,name:"Page 1",position:1},
+// {id:2231,name:"Inspection Summary",position:2}]:
+//   "Page 1"             → 2202   (exact name match)
+//   "page 1"             → 2202   (case-insensitive)
+//   "Inspection Summary" → 2231
+//   "1"                  → 2202   (interpreted as "Page 1" / first page)
+//   "2"                  → 2231
+//   "2202"               → 2202   (direct ID match)
 async function inspQaResolvePageId(templateId, pageNameOrId) {
-  // If the input is purely numeric, treat as page ID directly.
   if (!pageNameOrId) return null;
   const v = String(pageNameOrId).trim();
-  if (/^\d+$/.test(v)) return Number(v);
-  // Check session cache first.
-  const cache = state.inspQaPagesByTemplate[templateId] || {};
   const lower = v.toLowerCase();
-  if (cache[lower]) return cache[lower];
-  // Otherwise GET the template, walk pages.
-  try {
-    const r = await api("GET", `maintenance/api/v3/modules/inspectionTemplate/${templateId}`);
-    const tmpl = r?.data?.inspectionTemplate || r?.data || {};
-    const pages = tmpl.pages || tmpl.qandaPage || tmpl.pageList || [];
-    const arr = Array.isArray(pages) ? pages : Object.values(pages || {});
-    const newCache = {};
-    for (const p of arr) {
-      const n = (p.name || "").toLowerCase().trim();
-      if (n && p.id) newCache[n] = p.id;
+
+  // Ensure cache for this template — fetch pages if not yet cached.
+  let cache = state.inspQaPagesByTemplate[templateId];
+  if (!cache || !cache._pagesArr) {
+    let pagesArr = [];
+    // Strategy 1: GET template — pages may be nested.
+    try {
+      const r = await api("GET", `maintenance/api/v3/modules/inspectionTemplate/${templateId}`);
+      const tmpl = r?.data?.inspectionTemplate || r?.data || {};
+      for (const k of ["pages", "qandaPage", "pageList", "qaPages"]) {
+        if (Array.isArray(tmpl[k])) { pagesArr = tmpl[k]; break; }
+      }
+    } catch (_) {}
+    // Strategy 2: fetch qandaPage list and filter by parent.
+    if (!pagesArr.length) {
+      try {
+        const pr = await api("GET", `maintenance/api/v3/modules/qandaPage/view/all?moduleName=qandaPage&viewName=all&page=1&perPage=500`);
+        const proot = pr?.data || {};
+        let arr = proot.qandaPage || proot.list || [];
+        if (!Array.isArray(arr)) {
+          for (const k of Object.keys(proot)) if (Array.isArray(proot[k])) { arr = proot[k]; break; }
+        }
+        pagesArr = (arr || []).filter(p =>
+          Number(p.parent) === Number(templateId)
+          || Number(p.parentId) === Number(templateId)
+          || Number(p?.inspectionTemplate?.id) === Number(templateId));
+      } catch (_) {}
     }
-    state.inspQaPagesByTemplate[templateId] = { ...cache, ...newCache };
-    return state.inspQaPagesByTemplate[templateId][lower] || null;
-  } catch (e) { return null; }
+    cache = state.inspQaPagesByTemplate[templateId] = { _pagesArr: pagesArr };
+    for (const p of pagesArr) {
+      const n = (p.name || "").toLowerCase().trim();
+      if (n && p.id) cache[n] = p.id;
+    }
+    log(`Resolved ${pagesArr.length} page(s) for template ${templateId}: ${pagesArr.map(p => p.name + "#" + p.id).join(", ") || "(none)"}`, "dim");
+  }
+
+  const pagesArr = cache._pagesArr || [];
+
+  // 1. Exact name match (handles "Page 1", "Inspection Summary", etc.)
+  if (cache[lower]) return cache[lower];
+
+  // 2. Numeric input — interpret in order: "Page N" naming → position → array index → actual page ID
+  if (/^\d+$/.test(v)) {
+    const n = Number(v);
+    if (cache[`page ${n}`]) return cache[`page ${n}`];
+    const byPos = pagesArr.find(p => Number(p.position) === n);
+    if (byPos) return byPos.id;
+    if (pagesArr[n - 1]?.id) return pagesArr[n - 1].id;
+    const byId = pagesArr.find(p => Number(p.id) === n);
+    if (byId) return byId.id;
+  }
+
+  return null;
 }
 
 async function importInspQaPageBatch(rows) {
@@ -9639,8 +9856,9 @@ async function importInspQaPageBatch(rows) {
 // ----- Questions: validation + payload build + import -----
 async function validateInspQaRow(row) {
   const errors = [];
-  if (!row.pageId) errors.push("Page ID is required (numeric — get it from the Pages sub-grid after import, or from a captured page payload)");
-  else if (!/^\d+$/.test(String(row.pageId).trim())) errors.push("Page ID must be numeric");
+  if (!row.templateId) errors.push("Template ID is required");
+  else if (!/^\d+$/.test(String(row.templateId).trim())) errors.push("Template ID must be numeric");
+  if (!row.page) errors.push("Page is required (name or numeric ID)");
   if (!row.question) errors.push("Question text is required");
   if (!row.questionType) errors.push("Type is required");
   const typeDef = INSP_QA_TYPES.find(t => t.key === row.questionType);
@@ -9648,26 +9866,42 @@ async function validateInspQaRow(row) {
   if (typeDef && typeDef.hasOptions && !row.options) {
     errors.push("Options is required for Single/Multi Select (comma-separated)");
   }
+
+  // Resolve the page (name or ID) for this template
+  row._pageId = null;
+  if (row.templateId && row.page && !errors.some(e => e.includes("Template ID")) && !errors.some(e => e.includes("Page"))) {
+    try {
+      row._pageId = await inspQaResolvePageId(Number(row.templateId), row.page);
+      if (!row._pageId) errors.push(`Page "${row.page}" not found in template ${row.templateId} — create it first via the Pages sub-grid, or check the name/ID`);
+    } catch (e) {
+      errors.push(`Couldn't resolve page: ${e.message}`);
+    }
+  }
+
   if (errors.length) { row.status = { kind:"error", text: errors.join("; ") }; return false; }
   row.status = { kind:"valid", text:"Valid" };
   return true;
 }
 
 function buildInspQaQuestion(row, position) {
+  // Per-question toggle for Remarks/Attachments — Facilio shows the field
+  // only when the *Label* is a non-null string, so null=hidden.
+  const showRemarks = row.showRemarks !== "no";
+  const showAttachments = row.showAttachments !== "no";
   const data = {
     questionType: row.questionType,
     question: row.question,
     id: null,
     description: row.description || "",
     mandatory: row.mandatory === "yes",
-    commentsLabel: row.commentsLabel?.trim() || "Remarks",
+    commentsLabel: showRemarks ? (row.commentsLabel?.trim() || "Remarks") : null,
     individualRemarksLabel: null,
     enableFinding: false,
     findingsLabel: null,
-    page: Number(row.pageId),
+    page: Number(row._pageId || row.page),
     position,
     placeHolder: row.placeHolder || null,
-    attachmentLabel: "Attachments",
+    attachmentLabel: showAttachments ? (row.attachmentLabel?.trim() || "Attachments") : null,
     richText: null
   };
   // Type-specific
@@ -9695,19 +9929,92 @@ function buildInspQaQuestion(row, position) {
 }
 
 async function importInspQaBatch(rows) {
-  // Compute next position per page (resolve from existing questions if any)
-  const positionsByPage = {};
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const pid = Number(row.pageId);
-    if (!positionsByPage[pid]) {
-      // Optimistic: start from 1. Facilio will accept; if collisions matter we can GET first.
-      positionsByPage[pid] = 1;
+  // Step 1: collect the set of pages involved, then fetch existing positions
+  // for each so we can validate conflicts and auto-pick the next free slot.
+  const pageIds = new Set();
+  for (const row of rows) pageIds.add(Number(row._pageId || row.page));
+
+  const existingPositionsByPage = {};
+  for (const pid of pageIds) {
+    existingPositionsByPage[pid] = new Set();
+    try {
+      const r = await api("GET",
+        `maintenance/api/v3/modules/qandaQuestion/view/all?moduleName=qandaQuestion&viewName=all&page=1&perPage=500`);
+      const root = r?.data || {};
+      let arr = root.qandaQuestion || root.list || [];
+      if (!Array.isArray(arr)) {
+        for (const k of Object.keys(root)) if (Array.isArray(root[k])) { arr = root[k]; break; }
+      }
+      const existing = (arr || []).filter(q =>
+        Number(q.page) === pid || Number(q?.page?.id) === pid);
+      for (const q of existing) {
+        const p = Number(q.position);
+        if (!isNaN(p)) existingPositionsByPage[pid].add(p);
+      }
+      log(`Page ${pid}: ${existing.length} existing question(s), positions ${[...existingPositionsByPage[pid]].sort((a,b)=>a-b).join(", ") || "(none)"}`, "dim");
+    } catch (e) {
+      log(`Couldn't fetch existing questions for page ${pid}: ${e.message}`, "warn");
     }
-    const pos = positionsByPage[pid]++;
+  }
+
+  // Step 2: validate user-supplied positions (existing + within-batch conflicts).
+  const takenInBatch = {};
+  for (const pid of pageIds) takenInBatch[pid] = new Set();
+  for (const row of rows) {
+    const pid = Number(row._pageId || row.page);
+    const posStr = String(row.position || "").trim();
+    if (posStr && /^\d+$/.test(posStr)) {
+      const pos = Number(posStr);
+      if (existingPositionsByPage[pid].has(pos)) {
+        // Find next free
+        let next = pos + 1;
+        while (existingPositionsByPage[pid].has(next) || takenInBatch[pid].has(next)) next++;
+        row.status = { kind:"error", text: `Position ${pos} is already used on this page — try ${next} or leave Position blank to auto-assign.` };
+        continue;
+      }
+      if (takenInBatch[pid].has(pos)) {
+        row.status = { kind:"error", text: `Position ${pos} is duplicated within this batch — pick a different number.` };
+        continue;
+      }
+      takenInBatch[pid].add(pos);
+    }
+  }
+  renderInspQaQueue();
+  // Drop errored rows for the rest of this pass.
+  const okRows = rows.filter(r => r.status?.kind !== "error");
+  if (!okRows.length) {
+    showToast("Position conflicts — fix and re-import", "warn");
+    return;
+  }
+
+  // Step 3: auto-pick positions for rows without one, starting from
+  // max(existing + within-batch) + 1, skipping any taken slot.
+  const nextPosByPage = {};
+  for (const pid of pageIds) {
+    const maxExisting = Math.max(0, ...existingPositionsByPage[pid]);
+    const maxBatch = Math.max(0, ...takenInBatch[pid]);
+    nextPosByPage[pid] = Math.max(maxExisting, maxBatch) + 1;
+  }
+
+  // Step 4: POST one by one.
+  for (let i = 0; i < okRows.length; i++) {
+    const row = okRows[i];
+    const pid = Number(row._pageId || row.page);
+    let pos;
+    const posStr = String(row.position || "").trim();
+    if (posStr && /^\d+$/.test(posStr)) {
+      pos = Number(posStr);
+    } else {
+      while (existingPositionsByPage[pid].has(nextPosByPage[pid]) || takenInBatch[pid].has(nextPosByPage[pid])) {
+        nextPosByPage[pid]++;
+      }
+      pos = nextPosByPage[pid];
+      takenInBatch[pid].add(pos);
+      nextPosByPage[pid]++;
+    }
     const body = buildInspQaQuestion(row, pos);
-    log(`Question payload (row ${i+1}): ${JSON.stringify(body).slice(0, 400)}`, "dim");
-    row.status = { kind:"running", text:"Creating question…" };
+    log(`Question payload (row, pos ${pos}): ${JSON.stringify(body).slice(0, 400)}`, "dim");
+    row.status = { kind:"running", text:`Creating at position ${pos}…` };
     renderInspQaQueue();
     try {
       const r = await api("POST", "maintenance/api/v3/modules/qandaQuestion", body);
@@ -9716,7 +10023,9 @@ async function importInspQaBatch(rows) {
       const arr = Array.isArray(ret) ? ret : (ret ? [ret] : []);
       const newId = arr[0]?.id || ret?.id || null;
       if (newId) row._recordId = newId;
-      row.status = { kind:"success", text: newId ? `Created (id ${newId})` : "Created" };
+      row.status = { kind:"success", text: newId ? `Created at position ${pos} (id ${newId})` : `Created at position ${pos}` };
+      // Now position is taken — keep track in case of retries
+      existingPositionsByPage[pid].add(pos);
     } catch (e) {
       let detail = e.message;
       if (e.body) detail = String(e.body.message || JSON.stringify(e.body)).slice(0, 220);
@@ -9734,7 +10043,8 @@ const INSP_QA_PAGE_HEADER_ALIASES = {
   "position": "position"
 };
 const INSP_QA_HEADER_ALIASES = {
-  "page id": "pageId", "pageid": "pageId",
+  "template id": "templateId", "templateid": "templateId",
+  "page": "page", "page name": "page", "page id": "page", "pageid": "page",
   "question": "question", "question text": "question", "name": "question",
   "type": "questionType", "question type": "questionType",
   "description": "description", "desc": "description",
@@ -9744,8 +10054,11 @@ const INSP_QA_HEADER_ALIASES = {
   "show time": "showTime", "show time?": "showTime",
   "max length": "maxLength", "maxlength": "maxLength",
   "display": "displayType", "display type": "displayType",
-  "comments label": "commentsLabel",
-  "position": "position"
+  "remarks": "showRemarks", "remarks?": "showRemarks", "show remarks": "showRemarks",
+  "comments label": "commentsLabel", "remarks label": "commentsLabel",
+  "attachments": "showAttachments", "attachments?": "showAttachments", "show attachments": "showAttachments",
+  "attachment label": "attachmentLabel",
+  "position": "position", "sl no": "position", "sl.no": "position", "s.no": "position", "serial": "position", "serial no": "position", "order": "position"
 };
 
 function inspQaAddFromTabular(lines, delim, sheet) {
@@ -9864,14 +10177,14 @@ function inspQaAddFromTabular(lines, delim, sheet) {
     const wsP = XLSX.utils.aoa_to_sheet([pageHeaders, ...pageSamples]);
     wsP["!cols"] = pageHeaders.map(h => ({ wch: 22 }));
     XLSX.utils.book_append_sheet(wb, wsP, "Pages");
-    // Questions sheet
-    const qHeaders = ["Page ID","Question","Type","Description","Mandatory","Placeholder","Options","Show Time","Max Length","Display","Position"];
+    // Questions sheet — Template ID + Page (name or ID) so multiple templates work
+    const qHeaders = ["Template ID","Page","Question","Type","Description","Mandatory","Placeholder","Options","Show Time","Max Length","Display","Remarks","Remarks Label","Attachments","Attachment Label","Position"];
     const qSamples = [
-      ["2202","Inspector name","SHORT_ANSWER","Your name","yes","Enter name","","","","",""],
-      ["2202","Temperature reading","NUMBER","","yes","","","","","",""],
-      ["2202","Inspection date","DATE_TIME","","yes","","","yes","","",""],
-      ["2202","Equipment condition","MULTIPLE_CHOICE_ONE","","yes","","OK, Needs Repair, Replace","","","",""],
-      ["2202","Issues observed","MULTIPLE_CHOICE_MANY","","no","","Leak, Noise, Vibration","","","checkbox",""]
+      ["1738","Page 1","Inspector name","SHORT_ANSWER","Your name","yes","Enter name","","","","","yes","","yes","",""],
+      ["1738","Page 1","Temperature reading","NUMBER","","yes","","","","","","no","","no","",""],
+      ["1738","Page 1","Inspection date","DATE_TIME","","yes","","","yes","","","yes","","no","",""],
+      ["1738","Page 2","Equipment condition","MULTIPLE_CHOICE_ONE","","yes","","OK, Needs Repair, Replace","","","","yes","","yes","",""],
+      ["1738","Page 2","Issues observed","MULTIPLE_CHOICE_MANY","","no","","Leak, Noise, Vibration","","","checkbox","yes","Notes","yes","Photos",""]
     ];
     const wsQ = XLSX.utils.aoa_to_sheet([qHeaders, ...qSamples]);
     wsQ["!cols"] = qHeaders.map(h => ({ wch: 18 }));
@@ -9913,6 +10226,1098 @@ function inspQaAddFromTabular(lines, delim, sheet) {
   renderInspQaQueue();
 })();
 
+// ---------- Inspection Scoring sub-tab ----------
+// POST /maintenance/api/v3/scoringrules/add/{templateId}
+// Body: { rules: [{questionId, questionType, conditions: [...]}, ...] }
+// Each row in the grid = ONE condition. Rows get grouped by Template ID,
+// then by Question ID, and posted as a single payload per template.
+
+state.inspScoreQueue = state.inspScoreQueue || [];
+
+const INSP_SCORE_QTYPES = [
+  { v:"MULTIPLE_CHOICE_ONE",  l:"Single Select" },
+  { v:"MULTIPLE_CHOICE_MANY", l:"Multi Select" },
+  { v:"NUMBER",               l:"Number" },
+  { v:"DECIMAL",              l:"Decimal" },
+  { v:"DATE_TIME",            l:"Date / Time" }
+];
+
+const INSP_SCORE_COLUMNS = [
+  { key:"_num",         label:"#",              kind:"num",     width:"w-num",    sticky:true },
+  { key:"_status",      label:"Status",         kind:"status",  width:"w-status", sticky:true },
+  { key:"templateId",   label:"Template ID *",  kind:"text",    width:"w-sm" },
+  { key:"pageId",       label:"Page ID",        kind:"text",    width:"w-sm",
+    placeholder:"auto from Question ID" },
+  { key:"questionId",   label:"Question ID *",  kind:"text",    width:"w-sm" },
+  { key:"questionType", label:"Type *",         kind:"select",  width:"w-md",
+    options: INSP_SCORE_QTYPES },
+  { key:"questionName", label:"Question (label)",kind:"text",   width:"w-md",
+    placeholder:"optional — for readability" },
+  { key:"optionId",     label:"Option ID",      kind:"text",    width:"w-sm",
+    placeholder:"Option types" },
+  { key:"optionLabel",  label:"Option Label",   kind:"text",    width:"w-md",
+    placeholder:"Option types" },
+  { key:"value",        label:"Value",          kind:"text",    width:"w-sm",
+    placeholder:"Number/Decimal" },
+  { key:"operator",     label:"Operator",       kind:"text",    width:"w-sm",
+    placeholder:"9=<, 11=>, 20=on" },
+  { key:"score",        label:"Score *",        kind:"text",    width:"w-sm" },
+  { key:"sequence",     label:"Sequence",       kind:"text",    width:"w-sm", placeholder:"auto" },
+  { key:"_actions",     label:"",               kind:"actions", width:"w-actions" }
+];
+
+function blankInspScoreRow() {
+  return {
+    templateId:"", pageId:"", questionId:"", questionType:"MULTIPLE_CHOICE_ONE", questionName:"",
+    optionId:"", optionLabel:"", value:"", operator:"", score:"", sequence:""
+  };
+}
+
+// Which type-specific fields each Question Type actually USES. Fields
+// outside this list (and outside the "always-relevant" set below) get
+// grayed-out + disabled when the row's type is set.
+const INSP_QA_FIELD_RELEVANCE = {
+  SHORT_ANSWER:         ["placeHolder", "maxLength"],
+  LONG_ANSWER:          ["placeHolder", "maxLength"],
+  NUMBER:               ["placeHolder"],
+  DECIMAL:              ["placeHolder"],
+  DATE_TIME:            ["showTime"],
+  SIGNATURE:            [],
+  MULTIPLE_CHOICE_ONE:  ["options"],
+  MULTIPLE_CHOICE_MANY: ["options", "displayType"]
+};
+// Always-relevant columns (regardless of question type)
+const INSP_QA_TYPE_AGNOSTIC_KEYS = new Set([
+  "_num", "_status", "_recordId", "_actions",
+  "templateId", "page", "question", "questionType",
+  "description", "mandatory",
+  "showRemarks", "commentsLabel",
+  "showAttachments", "attachmentLabel",
+  "position"
+]);
+
+// One-time CSS injection for "not-applicable" cells in the Q&A grid.
+if (!document.getElementById("qa-cell-na-style")) {
+  const _qaStyle = document.createElement("style");
+  _qaStyle.id = "qa-cell-na-style";
+  _qaStyle.textContent =
+    "table.grid td.qa-cell-na { background: #f3f4f6 !important; }" +
+    "table.grid td.qa-cell-na input, table.grid td.qa-cell-na select, table.grid td.qa-cell-na textarea {" +
+    "  background: transparent !important; color: #c7cad1 !important; pointer-events: none; }";
+  document.head.appendChild(_qaStyle);
+}
+
+// Filter state for the Scoring grid (per column).
+state.inspScoreFilters = state.inspScoreFilters || {};
+
+function renderInspScoreQueue() {
+  const head = $("#inspScoreGridHead");
+  if (!head) return;
+  const cols = INSP_SCORE_COLUMNS;
+  const table = head.closest("table");
+  const existingColgroup = table.querySelector(":scope > colgroup");
+  if (existingColgroup) existingColgroup.remove();
+  delete head.dataset.built;
+  buildGridHead(head, cols);
+
+  // Add (or refresh) a second header row with per-column filter inputs.
+  const thead = head.parentNode;
+  let filterRow = thead.querySelector("tr.score-filter-row");
+  if (!filterRow) {
+    filterRow = document.createElement("tr");
+    filterRow.className = "score-filter-row";
+    thead.appendChild(filterRow);
+  }
+  filterRow.innerHTML = cols.map(c => {
+    const sticky = c.sticky ? " sticky-left" : "";
+    if (c.kind === "num" || c.kind === "actions" || c.kind === "status") {
+      return `<th class="${sticky.trim()}" style="background:#f3f4f6; padding:4px 6px;"></th>`;
+    }
+    const val = state.inspScoreFilters[c.key] || "";
+    return `<th class="${sticky.trim()}" style="background:#f3f4f6; padding:4px 6px;">
+      <input type="text" data-scorefilter="${c.key}" value="${escapeAttr(val)}" placeholder="filter…"
+        style="width:100%; font-size:11px; padding:4px 6px; border:1px solid var(--line); background:#ffffff;" />
+    </th>`;
+  }).join("");
+
+  // Apply filters (case-insensitive contains, all must match).
+  const filtersActive = Object.entries(state.inspScoreFilters).filter(([, v]) => v && v.trim());
+  const visibleRows = filtersActive.length === 0
+    ? state.inspScoreQueue.map((r, i) => ({ row: r, idx: i }))
+    : state.inspScoreQueue
+        .map((r, i) => ({ row: r, idx: i }))
+        .filter(({ row }) => filtersActive.every(([k, v]) =>
+          String(row[k] ?? "").toLowerCase().includes(v.toLowerCase().trim())));
+
+  const tbody = $("#inspScoreGrid tbody");
+  tbody.innerHTML = visibleRows.map(({ row, idx }) =>
+    `<tr>` + cols.map(c => renderCell(c, row, idx)).join("") + `</tr>`
+  ).join("");
+
+  const total = state.inspScoreQueue.length;
+  const shown = visibleRows.length;
+  $("#inspScoreRowCount").textContent =
+    filtersActive.length
+      ? `${shown} of ${total} row${total === 1 ? "" : "s"} (filtered)`
+      : `${total} row${total === 1 ? "" : "s"}`;
+}
+
+async function validateInspScoreRow(row) {
+  const errors = [];
+  if (!row.templateId || !/^\d+$/.test(String(row.templateId).trim())) errors.push("Template ID required (numeric)");
+  if (!row.questionId || !/^\d+$/.test(String(row.questionId).trim())) errors.push("Question ID required (numeric)");
+  if (!row.questionType) errors.push("Question Type required");
+  if (row.score === "" || row.score == null) errors.push("Score required");
+  else if (isNaN(+row.score)) errors.push("Score must be a number");
+
+  const t = row.questionType;
+  if (t === "MULTIPLE_CHOICE_ONE" || t === "MULTIPLE_CHOICE_MANY") {
+    if (!row.optionId || !/^\d+$/.test(String(row.optionId).trim()))
+      errors.push("Option ID required (numeric) for Option types");
+  }
+  if (t === "NUMBER" || t === "DECIMAL") {
+    if (row.value === "") errors.push("Value required for Number/Decimal");
+    if (!row.operator) errors.push("Operator required for Number/Decimal");
+  }
+  if (t === "DATE_TIME" && !row.operator) {
+    errors.push("Operator required for Date/Time");
+  }
+
+  // Resolve Page ID for the question if it's missing (the scoring URL needs
+  // the question's page ID, not the template ID).
+  if (!row.pageId && row.questionId && /^\d+$/.test(String(row.questionId).trim())) {
+    try {
+      const r = await api("GET", `maintenance/api/v3/modules/qandaQuestion/${row.questionId}`);
+      const q = r?.data?.qandaQuestion || r?.data || {};
+      const pid = q?.page?.id || q?.page || q?.parent;
+      if (pid) row.pageId = String(pid);
+      else errors.push(`Couldn't resolve Page ID for question ${row.questionId} — fill it in manually`);
+    } catch (e) {
+      errors.push(`Couldn't fetch question ${row.questionId} to resolve Page ID: ${e.message}`);
+    }
+  }
+  if (!row.pageId || !/^\d+$/.test(String(row.pageId).trim())) {
+    errors.push("Page ID is required for scoring — fill it manually or re-run Load Questions");
+  }
+
+  if (errors.length) { row.status = { kind:"error", text: errors.join("; ") }; return false; }
+  row.status = { kind:"valid", text:"Valid" };
+  return true;
+}
+
+// Build one condition object from a row, shaped by question type.
+function buildScoringCondition(row, sequence) {
+  const t = row.questionType;
+  if (t === "MULTIPLE_CHOICE_ONE" || t === "MULTIPLE_CHOICE_MANY") {
+    return {
+      option: Number(row.optionId),
+      label: row.optionLabel || "",
+      score: Number(row.score)
+    };
+  }
+  if (t === "NUMBER" || t === "DECIMAL") {
+    return {
+      value: String(row.value),
+      score: Number(row.score),
+      operator: Number(row.operator),
+      sequence: row.sequence && !isNaN(+row.sequence) ? Number(row.sequence) : sequence
+    };
+  }
+  if (t === "DATE_TIME") {
+    return {
+      operator: Number(row.operator),
+      score: Number(row.score),
+      sequence: row.sequence && !isNaN(+row.sequence) ? Number(row.sequence) : sequence
+    };
+  }
+  return { score: Number(row.score) };
+}
+
+async function importInspScoreBatch(rows) {
+  // The /scoringrules/add/{pageId} endpoint scopes rules to a single Q&A
+  // page. Group rows by pageId → questionId, then POST once per page.
+  const byPage = new Map();
+  for (const row of rows) {
+    const pid = String(row.pageId).trim();
+    const qid = String(row.questionId).trim();
+    if (!byPage.has(pid)) byPage.set(pid, new Map());
+    const byQ = byPage.get(pid);
+    if (!byQ.has(qid)) byQ.set(qid, { row, conditions: [] });
+    byQ.get(qid).conditions.push(row);
+  }
+
+  for (const [pid, byQ] of byPage) {
+    const rules = [];
+    for (const [qid, group] of byQ) {
+      const head = group.row;
+      const conditions = group.conditions.map((r, i) => buildScoringCondition(r, i + 1));
+      const fullScore = conditions.reduce((s, c) => s + (Number(c.score) || 0), 0);
+      rules.push({
+        questionId: Number(qid),
+        questionType: head.questionType,
+        question: head.questionName || "",
+        conditions,
+        fullScore
+      });
+    }
+    const body = { rules };
+    log(`Scoring payload for page ${pid}: ${JSON.stringify(body).slice(0, 500)}`, "dim");
+    for (const g of byQ.values()) for (const r of g.conditions) {
+      r.status = { kind:"running", text:`Saving scoring rules for page ${pid}…` };
+    }
+    renderInspScoreQueue();
+
+    try {
+      await api("POST", `maintenance/api/v3/scoringrules/add/${pid}`, body);
+      for (const g of byQ.values()) for (const r of g.conditions) {
+        r.status = { kind:"success", text:`Scored on page ${pid}` };
+      }
+    } catch (e) {
+      let detail = e.message;
+      if (e.body) detail = String(e.body.message || JSON.stringify(e.body)).slice(0, 220);
+      for (const g of byQ.values()) for (const r of g.conditions) {
+        r.status = { kind:"error", text: `Page ${pid} POST failed: ${detail}` };
+      }
+      log(`Page ${pid} scoring failed — ${detail}`, "err");
+    }
+    renderInspScoreQueue();
+  }
+}
+
+const INSP_SCORE_HEADER_ALIASES = {
+  "template id": "templateId", "templateid": "templateId",
+  "page id": "pageId", "pageid": "pageId",
+  "question id": "questionId", "questionid": "questionId",
+  "question type": "questionType", "type": "questionType",
+  "question": "questionName", "question name": "questionName", "question label": "questionName",
+  "option id": "optionId", "optionid": "optionId",
+  "option label": "optionLabel", "option": "optionLabel", "label": "optionLabel",
+  "value": "value",
+  "operator": "operator",
+  "score": "score",
+  "sequence": "sequence", "seq": "sequence"
+};
+
+function inspScoreAddFromTabular(lines, delim) {
+  const headers = lines[0].split(delim).map(h => h.trim());
+  let added = 0;
+  for (let li = 1; li < lines.length; li++) {
+    const cells = lines[li].split(delim);
+    const row = blankInspScoreRow();
+    let hasContent = false;
+    headers.forEach((h, i) => {
+      const key = INSP_SCORE_HEADER_ALIASES[h.toLowerCase().trim()];
+      if (key && cells[i] != null) {
+        row[key] = cells[i].trim();
+        if (cells[i].trim()) hasContent = true;
+      }
+    });
+    if (hasContent) { state.inspScoreQueue.push(row); added++; }
+  }
+  return added;
+}
+
+// Fetch scorable questions from one or more inspection templates and
+// pre-populate the Scoring grid. Tries several response shapes since the
+// GET on inspectionTemplate may include pages/questions nested in different
+// ways across Facilio versions. Falls back to fetching pages and questions
+// separately when nothing is nested.
+async function loadScorableQuestionsForTemplates(templateIds) {
+  const SCORING_TYPES = new Set([
+    "MULTIPLE_CHOICE_ONE", "MULTIPLE_CHOICE_MANY",
+    "NUMBER", "DECIMAL", "DATE_TIME"
+  ]);
+  const findArrayKey = (obj, candidates) => {
+    if (!obj) return null;
+    for (const k of candidates) if (Array.isArray(obj[k])) return obj[k];
+    return null;
+  };
+
+  let totalQuestions = 0;
+  const newRows = [];
+  for (const rawTid of templateIds) {
+    const tid = String(rawTid).trim();
+    if (!tid) continue;
+    log(`Loading scorable questions for template ${tid}…`, "info");
+    let template = null;
+    try {
+      const r = await api("GET", `maintenance/api/v3/modules/inspectionTemplate/${tid}`);
+      template = r?.data?.inspectionTemplate || r?.data || null;
+    } catch (e) {
+      log(`Couldn't fetch template ${tid}: ${e.message}`, "err");
+      continue;
+    }
+    if (!template) { log(`Template ${tid} returned empty body`, "warn"); continue; }
+
+    // Find pages — try nested first, then a separate fetch.
+    let pages = findArrayKey(template, ["pages", "qandaPage", "pageList", "qaPages"]) || [];
+    if (!pages.length) {
+      // Try a filtered view/all on qandaPage by parent — Facilio's view/all
+      // doesn't always accept filters; fall back to client-side filter.
+      try {
+        const pr = await api("GET",
+          `maintenance/api/v3/modules/qandaPage/view/all?moduleName=qandaPage&viewName=all&page=1&perPage=500`);
+        const proot = pr?.data || {};
+        let arr = proot.qandaPage || proot.list || [];
+        if (!Array.isArray(arr)) {
+          for (const k of Object.keys(proot)) if (Array.isArray(proot[k])) { arr = proot[k]; break; }
+        }
+        pages = (arr || []).filter(p =>
+          Number(p.parent) === Number(tid)
+          || Number(p.parentId) === Number(tid)
+          || Number(p?.inspectionTemplate?.id) === Number(tid));
+      } catch (e) {
+        log(`Couldn't list qandaPage for template ${tid}: ${e.message}`, "warn");
+      }
+    }
+    if (!pages.length) { log(`Template ${tid} has no pages`, "warn"); continue; }
+    log(`Template ${tid}: ${pages.length} page(s) found`, "dim");
+
+    // Collect all questions across pages. If a page has questions nested, use
+    // them; otherwise fetch via qandaQuestion list filtered to that page.
+    const allPageQuestions = [];
+    for (const page of pages) {
+      let questions = findArrayKey(page, ["questions", "qandaQuestion", "questionList"]) || [];
+      if (!questions.length) {
+        try {
+          const qr = await api("GET",
+            `maintenance/api/v3/modules/qandaQuestion/view/all?moduleName=qandaQuestion&viewName=all&page=1&perPage=500`);
+          const qroot = qr?.data || {};
+          let qarr = qroot.qandaQuestion || qroot.list || [];
+          if (!Array.isArray(qarr)) {
+            for (const k of Object.keys(qroot)) if (Array.isArray(qroot[k])) { qarr = qroot[k]; break; }
+          }
+          questions = (qarr || []).filter(q =>
+            Number(q.page) === Number(page.id) || Number(q?.page?.id) === Number(page.id));
+        } catch (e) { /* keep empty */ }
+      }
+      for (const q of questions) {
+        q._pageName = page.name || `Page ${page.id}`;
+        q._pageId = page.id;
+        allPageQuestions.push(q);
+      }
+    }
+    log(`Template ${tid}: ${allPageQuestions.length} total question(s)`, "dim");
+
+    // Filter to scorable types and pre-populate grid rows. Dedupe at the
+    // (questionId, optionId) level in case the API echoes a question more
+    // than once across pages.
+    let added = 0;
+    let skipped = 0;
+    const seen = new Set();
+    // Log every question we got back so the user can see what's there.
+    const typeSummary = {};
+    for (const q of allPageQuestions) {
+      typeSummary[q.questionType] = (typeSummary[q.questionType] || 0) + 1;
+    }
+    log(`  Question types found: ${Object.entries(typeSummary).map(([t, n]) => `${t}=${n}`).join(", ") || "(none)"}`, "dim");
+
+    for (const q of allPageQuestions) {
+      if (!SCORING_TYPES.has(q.questionType)) {
+        skipped++;
+        log(`  skip Q#${q.id} "${q.question}" — ${q.questionType} (not scorable)`, "dim");
+        continue;
+      }
+      if (q.questionType === "MULTIPLE_CHOICE_ONE" || q.questionType === "MULTIPLE_CHOICE_MANY") {
+        const opts = Array.isArray(q.options) ? q.options : [];
+        log(`  use  Q#${q.id} "${q.question}" — ${q.questionType} (${opts.length} option${opts.length === 1 ? "" : "s"})`, "ok");
+        for (let optIdx = 0; optIdx < opts.length; optIdx++) {
+          const opt = opts[optIdx];
+          const oid = String(opt.id ?? opt.value ?? "");
+          const dedupeKey = `${tid}|${q.id}|${oid}`;
+          if (seen.has(dedupeKey)) continue;
+          seen.add(dedupeKey);
+          newRows.push({
+            templateId: String(tid),
+            pageId: String(q._pageId || q.page?.id || q.page || ""),
+            questionId: String(q.id),
+            questionType: q.questionType,
+            // Make it visually clear that these rows belong to the same question.
+            questionName: `${q.question || ""}  (option ${optIdx + 1} of ${opts.length})`,
+            optionId: oid,
+            optionLabel: opt.label || "",
+            value: "", operator: "", score: "", sequence: ""
+          });
+          added++;
+        }
+      } else {
+        // Number / Decimal / Date — one starter row per question.
+        const dedupeKey = `${tid}|${q.id}|`;
+        if (seen.has(dedupeKey)) continue;
+        seen.add(dedupeKey);
+        log(`  use  Q#${q.id} "${q.question}" — ${q.questionType}`, "ok");
+        newRows.push({
+          templateId: String(tid),
+          pageId: String(q._pageId || q.page?.id || q.page || ""),
+          questionId: String(q.id),
+          questionType: q.questionType,
+          questionName: q.question || "",
+          optionId: "", optionLabel: "",
+          value: "", operator: "", score: "", sequence: "1"
+        });
+        added++;
+      }
+    }
+    totalQuestions += added;
+    log(`Template ${tid}: pre-populated ${added} scorable row(s), skipped ${skipped} non-scorable question(s)`, "ok");
+  }
+
+  if (!newRows.length) {
+    showToast("No scorable questions found across the given templates", "warn");
+    return 0;
+  }
+  // Replace queue with loaded rows.
+  state.inspScoreQueue = newRows;
+  renderInspScoreQueue();
+  return totalQuestions;
+}
+
+(function wireInspectionScoringTab(){
+  if (!document.getElementById("inspScoreGrid")) return;
+  if (state.inspScoreQueue.length === 0) state.inspScoreQueue.push(blankInspScoreRow());
+
+  bindGridInputs("#inspScoreGrid",
+    () => state.inspScoreQueue,
+    () => INSP_SCORE_COLUMNS,
+    () => blankInspScoreRow(),
+    renderInspScoreQueue);
+
+  const addRow = () => { state.inspScoreQueue.push(blankInspScoreRow()); renderInspScoreQueue(); };
+  document.getElementById("btnInspScoreNewRow")?.addEventListener("click", addRow);
+  document.getElementById("btnInspScoreNewRow2")?.addEventListener("click", addRow);
+
+  // Load button — fetch scorable questions for the given template IDs
+  document.getElementById("btnInspScoreLoad")?.addEventListener("click", async () => {
+    const raw = document.getElementById("inspScoreLoadIds")?.value || "";
+    const tids = raw.split(",").map(s => s.trim()).filter(Boolean);
+    if (!tids.length) {
+      showToast("Enter at least one Template ID", "warn");
+      return;
+    }
+    const status = document.getElementById("inspScoreLoadStatus");
+    const btn = document.getElementById("btnInspScoreLoad");
+    if (btn) { btn.disabled = true; btn.textContent = "Loading…"; }
+    if (status) status.textContent = "Loading…";
+    try {
+      const n = await loadScorableQuestionsForTemplates(tids);
+      if (status) status.textContent = n > 0 ? `✓ Loaded ${n} scorable row(s)` : "No scorable questions found";
+      if (n > 0) showToast(`Loaded ${n} scorable row(s)`);
+    } catch (e) {
+      if (status) status.textContent = "Load failed";
+      log("Scoring load failed: " + e.message, "err");
+      showToast("Load failed — see Logs", "err");
+    }
+    if (btn) { btn.disabled = false; btn.textContent = "Load Questions"; }
+  });
+
+  // Per-column filter inputs in the score grid header — re-render on input
+  document.getElementById("inspScoreGrid")?.addEventListener("input", e => {
+    const f = e.target.closest("input[data-scorefilter]");
+    if (!f) return;
+    state.inspScoreFilters[f.dataset.scorefilter] = f.value;
+    // Re-render the body only — avoid re-rendering the head (which would
+    // blow away the active filter input's focus).
+    const filtersActive = Object.entries(state.inspScoreFilters).filter(([, v]) => v && v.trim());
+    const visibleRows = filtersActive.length === 0
+      ? state.inspScoreQueue.map((r, i) => ({ row: r, idx: i }))
+      : state.inspScoreQueue
+          .map((r, i) => ({ row: r, idx: i }))
+          .filter(({ row }) => filtersActive.every(([k, v]) =>
+            String(row[k] ?? "").toLowerCase().includes(v.toLowerCase().trim())));
+    const tbody = document.querySelector("#inspScoreGrid tbody");
+    tbody.innerHTML = visibleRows.map(({ row, idx }) =>
+      `<tr>` + INSP_SCORE_COLUMNS.map(c => renderCell(c, row, idx)).join("") + `</tr>`
+    ).join("");
+    const total = state.inspScoreQueue.length;
+    const shown = visibleRows.length;
+    document.getElementById("inspScoreRowCount").textContent =
+      filtersActive.length
+        ? `${shown} of ${total} row${total === 1 ? "" : "s"} (filtered)`
+        : `${total} row${total === 1 ? "" : "s"}`;
+  });
+
+  document.getElementById("btnInspScoreValidate")?.addEventListener("click", async () => {
+    for (const r of state.inspScoreQueue) {
+      r.status = { kind:"running", text:"Validating…" }; renderInspScoreQueue();
+      await validateInspScoreRow(r); renderInspScoreQueue();
+    }
+  });
+
+  document.getElementById("btnInspScoreImport")?.addEventListener("click", async () => {
+    const valid = [];
+    for (const r of state.inspScoreQueue) {
+      if (r.status?.kind === "success") continue;
+      const ok = await validateInspScoreRow(r);
+      if (ok) valid.push(r);
+    }
+    renderInspScoreQueue();
+    if (!valid.length) { showToast("Nothing valid to import"); return; }
+    await importInspScoreBatch(valid);
+    showToast("Scoring import complete");
+  });
+
+  document.getElementById("btnInspScoreRemoveDone")?.addEventListener("click", () => {
+    state.inspScoreQueue = state.inspScoreQueue.filter(r => r.status?.kind !== "success");
+    if (!state.inspScoreQueue.length) state.inspScoreQueue.push(blankInspScoreRow());
+    renderInspScoreQueue();
+  });
+  document.getElementById("btnInspScoreClearAll")?.addEventListener("click", () => {
+    if (confirm("Clear all Scoring rows?")) {
+      state.inspScoreQueue = [blankInspScoreRow()];
+      renderInspScoreQueue();
+    }
+  });
+
+  document.getElementById("btnInspScoreBulkParse")?.addEventListener("click", () => {
+    const text = document.getElementById("inspScoreBulkPaste").value;
+    if (!text.trim()) return showToast("Paste box is empty", "warn");
+    const lines = text.replace(/\r/g, "").split("\n").filter(l => l.trim());
+    if (lines.length < 2) return showToast("Need a header row + data rows", "err");
+    const delim = lines[0].includes("\t") ? "\t" : ",";
+    const added = inspScoreAddFromTabular(lines, delim);
+    renderInspScoreQueue();
+    showToast(`Added ${added} row(s)`);
+  });
+  document.getElementById("btnInspScoreBulkClear")?.addEventListener("click", () => {
+    document.getElementById("inspScoreBulkPaste").value = "";
+  });
+
+  document.getElementById("btnInspScoreTemplate")?.addEventListener("click", () => {
+    if (typeof XLSX === "undefined") return showToast("Excel library failed to load", "err");
+    const headers = ["Template ID","Question ID","Question Type","Question","Option ID","Option Label","Value","Operator","Score","Sequence"];
+    const samples = [
+      // Multi-choice example (one row per option)
+      ["2228","9781","MULTIPLE_CHOICE_ONE","Choices","5605","Choice 1","","","2",""],
+      ["2228","9781","MULTIPLE_CHOICE_ONE","Choices","5606","Choice 2","","","9",""],
+      // Number example (two ranges)
+      ["2228","9747","NUMBER","Number","","","5","9","1","1"],
+      ["2228","9747","NUMBER","Number","","","6","11","2","2"],
+      // Date/Time example
+      ["2228","9749","DATE_TIME","Date/Time","","","","20","0","1"]
+    ];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...samples]);
+    ws["!cols"] = headers.map(h => ({ wch: Math.max(14, Math.min(28, h.length + 4)) }));
+    XLSX.utils.book_append_sheet(wb, ws, "ScoringRules");
+    XLSX.writeFile(wb, "inspection-scoring-template.xlsx");
+    showToast("Saved inspection-scoring-template.xlsx");
+  });
+  document.getElementById("btnInspScoreUpload")?.addEventListener("click", () => {
+    document.getElementById("inspScoreExcelInput").click();
+  });
+  document.getElementById("inspScoreExcelInput")?.addEventListener("change", async e => {
+    const file = e.target.files[0]; e.target.value = "";
+    if (!file || typeof XLSX === "undefined") return;
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const tsv = XLSX.utils.sheet_to_csv(ws, { FS: "\t" });
+    const lines = tsv.replace(/\r/g, "").split("\n").filter(l => l.trim());
+    if (lines.length < 2) return showToast("File has no data rows", "warn");
+    const added = inspScoreAddFromTabular(lines, "\t");
+    renderInspScoreQueue();
+    showToast(`Imported ${added} row(s)`);
+  });
+
+  // Extend the sub-tab toggle so Scoring shows/hides
+  document.querySelectorAll("#tabInspections .subtab[data-inspsub]").forEach(b =>
+    b.addEventListener("click", () => {
+      const which = b.dataset.inspsub;
+      document.getElementById("inspSubScoring")?.classList.toggle("hidden", which !== "scoring");
+      if (which === "scoring") renderInspScoreQueue();
+    })
+  );
+
+  renderInspScoreQueue();
+})();
+
+// ---------- Routes (under PPM) ----------
+// Two grids: Add Routes (POST /modules/routes) and Asset Association
+// (POST /modules/multiResource). Routes form ID auto-discovers; Routes
+// Module ID is entered once into the Defaults panel.
+
+const ROUTE_DEFAULTS_LS_KEY = "ppm-manager.routes.defaults.v1";
+
+state.routeQueue = state.routeQueue || [];
+state.routeAssocQueue = state.routeAssocQueue || [];
+state.activeRouteInner = state.activeRouteInner || "routes";
+state.routeDefaults = state.routeDefaults || {};
+// Session cache: route name → id, populated as new routes are created.
+state.routesByName = state.routesByName || {};
+
+const ROUTE_COLUMNS = [
+  { key:"_num",       label:"#",            kind:"num",     width:"w-num",    sticky:true },
+  { key:"_status",    label:"Status",       kind:"status",  width:"w-status", sticky:true },
+  { key:"name",       label:"Route Name *", kind:"text",    width:"w-md" },
+  { key:"description",label:"Description",  kind:"text",    width:"w-lg" },
+  { key:"site",       label:"Site *",       kind:"text",    width:"w-md", picklist:"site" },
+  { key:"_recordId",  label:"Route ID",     kind:"readonly",width:"w-sm" },
+  { key:"_actions",   label:"",             kind:"actions", width:"w-actions" }
+];
+const ROUTE_ASSOC_COLUMNS = [
+  { key:"_num",          label:"#",             kind:"num",     width:"w-num",    sticky:true },
+  { key:"_status",       label:"Status",        kind:"status",  width:"w-status", sticky:true },
+  { key:"routeId",       label:"Route ID",      kind:"text",    width:"w-sm",
+    placeholder:"e.g. 14 (fastest)" },
+  { key:"route",         label:"Route Name",    kind:"text",    width:"w-md",
+    placeholder:"if Route ID is blank" },
+  { key:"resourceType",  label:"Resource Type *", kind:"select", width:"w-sm",
+    options:[{v:"asset",l:"Asset"},{v:"building",l:"Building"},{v:"floor",l:"Floor"},{v:"space",l:"Space"}] },
+  { key:"resourceId",    label:"Resource ID",   kind:"text",    width:"w-sm",
+    placeholder:"numeric (fastest)" },
+  { key:"resource",      label:"Resource Name", kind:"text",    width:"w-md",
+    placeholder:"if Resource ID is blank" },
+  { key:"sequence",      label:"Sequence *",    kind:"text",    width:"w-sm", placeholder:"1" },
+  { key:"description",   label:"Description",   kind:"text",    width:"w-md" },
+  { key:"_actions",      label:"",              kind:"actions", width:"w-actions" }
+];
+
+function blankRouteRow() {
+  return { name:"", description:"", site:"", _recordId:"" };
+}
+function blankRouteAssocRow() {
+  return {
+    routeId:"", route:"",
+    resourceType:"asset", resourceId:"", resource:"",
+    sequence:"", description:""
+  };
+}
+const routeActiveColumns = () => state.activeRouteInner === "assoc" ? ROUTE_ASSOC_COLUMNS : ROUTE_COLUMNS;
+const routeActiveQueue   = () => state.activeRouteInner === "assoc" ? state.routeAssocQueue : state.routeQueue;
+const routeBlankRow      = () => state.activeRouteInner === "assoc" ? blankRouteAssocRow() : blankRouteRow();
+
+function loadRouteDefaults() {
+  try {
+    const raw = localStorage.getItem(ROUTE_DEFAULTS_LS_KEY);
+    if (raw) state.routeDefaults = JSON.parse(raw);
+  } catch (_) {}
+  state.routeDefaults = state.routeDefaults || {};
+  const fid = document.getElementById("routeDefFormId");
+  const mid = document.getElementById("routeDefModuleId");
+  if (fid && state.routeDefaults.formId) fid.value = state.routeDefaults.formId;
+  if (mid && state.routeDefaults.moduleId) mid.value = state.routeDefaults.moduleId;
+}
+function saveRouteDefaultsFromUi() {
+  state.routeDefaults = {
+    formId: (document.getElementById("routeDefFormId")?.value || "").trim(),
+    moduleId: (document.getElementById("routeDefModuleId")?.value || "").trim()
+  };
+  localStorage.setItem(ROUTE_DEFAULTS_LS_KEY, JSON.stringify(state.routeDefaults));
+  const el = document.getElementById("routeDefaultsStatus");
+  if (el) {
+    el.textContent = "✓ saved";
+    setTimeout(() => { if (el.textContent === "✓ saved") el.textContent = ""; }, 3000);
+  }
+}
+
+async function autoDiscoverRouteForm(force) {
+  const fld = document.getElementById("routeDefFormId");
+  if (!fld) return;
+  if (!force && state.routeDefaults?.formId && fld.value) return;
+  fld.placeholder = "(discovering…)";
+  try {
+    if (force) state.formsByModule.routes = null;
+    const entry = await ensureModuleForms("routes");
+    if (entry?.selectedFormId) {
+      fld.value = entry.selectedFormId;
+      state.routeDefaults = state.routeDefaults || {};
+      state.routeDefaults.formId = String(entry.selectedFormId);
+      localStorage.setItem(ROUTE_DEFAULTS_LS_KEY, JSON.stringify(state.routeDefaults));
+      log(`routes form discovered: ${entry.selectedFormId}`, "ok");
+    }
+  } catch (_) {}
+  // Also try to auto-discover the routes Module ID (used as parentModuleId).
+  await autoDiscoverRoutesModuleId(force);
+}
+
+async function autoDiscoverRoutesModuleId(force) {
+  const mid = document.getElementById("routeDefModuleId");
+  if (!mid) return;
+  if (!force && state.routeDefaults?.moduleId && mid.value) return;
+  try {
+    // Fetch any existing route record — each record carries its parent moduleId.
+    const r = await api("GET",
+      `maintenance/api/v3/modules/routes/view/all?moduleName=routes&viewName=all&page=1&perPage=1`);
+    const root = r?.data || {};
+    let arr = root.routes || root.list || [];
+    if (!Array.isArray(arr)) {
+      for (const k of Object.keys(root)) if (Array.isArray(root[k])) { arr = root[k]; break; }
+    }
+    const moduleId = arr?.[0]?.moduleId;
+    if (moduleId) {
+      mid.value = String(moduleId);
+      state.routeDefaults = state.routeDefaults || {};
+      state.routeDefaults.moduleId = String(moduleId);
+      localStorage.setItem(ROUTE_DEFAULTS_LS_KEY, JSON.stringify(state.routeDefaults));
+      log(`routes Module ID discovered: ${moduleId}`, "ok");
+    } else {
+      log(`Couldn't auto-discover routes Module ID — fill it manually in the Defaults panel (find it in DevTools under parentModuleId of a Save Asset request)`, "warn");
+    }
+  } catch (e) {
+    log(`routes Module ID auto-discovery failed: ${e.message}`, "warn");
+  }
+}
+
+function renderRouteQueue() {
+  const head = $("#routeGridHead");
+  if (!head) return;
+  const cols = routeActiveColumns();
+  const table = head.closest("table");
+  const existingColgroup = table.querySelector(":scope > colgroup");
+  if (existingColgroup) existingColgroup.remove();
+  delete head.dataset.built;
+  buildGridHead(head, cols);
+  const queue = routeActiveQueue();
+  const tbody = $("#routeGrid tbody");
+  tbody.innerHTML = queue.map((row, idx) =>
+    `<tr>` + cols.map(c => renderCell(c, row, idx)).join("") + `</tr>`
+  ).join("");
+  $("#routeRowCount").textContent = `${queue.length} row${queue.length === 1 ? "" : "s"}`;
+  $$("#routeInnerTabs .freq-tab").forEach(b => b.classList.toggle("active", b.dataset.routeinner === state.activeRouteInner));
+}
+
+// ----- Add Routes: validate + import -----
+async function validateRouteRow(row) {
+  const errors = [];
+  const d = state.routeDefaults || {};
+  if (!d.formId) errors.push("Routes Form ID is missing — open Defaults and Re-discover");
+  if (!row.name) errors.push("Route Name is required");
+  if (!row.site) errors.push("Site is required");
+  try {
+    if (row.site) {
+      row._siteId = await portFindIdByName("site", row.site);
+      if (!row._siteId) errors.push(`Site "${row.site}" not found`);
+    }
+  } catch (e) { errors.push(e.message); }
+  if (errors.length) { row.status = { kind:"error", text: errors.join("; ") }; return false; }
+  row.status = { kind:"valid", text:"Valid" };
+  return true;
+}
+
+async function importRouteBatch(rows) {
+  const d = state.routeDefaults || {};
+  for (const row of rows) {
+    const body = {
+      moduleName: "routes",
+      data: {
+        name: row.name,
+        description: row.description || null,
+        siteId: Number(row._siteId),
+        formId: Number(d.formId),
+        actionFormId: Number(d.formId),
+        mySignatureApplied: false
+      }
+    };
+    log(`Route payload: ${JSON.stringify(body)}`, "dim");
+    row.status = { kind:"running", text:"Creating route…" };
+    renderRouteQueue();
+    try {
+      const r = await api("POST", "maintenance/api/v3/modules/routes", body);
+      const root = r?.data || {};
+      const ret = root.routes || root.list || root.data || root;
+      const arr = Array.isArray(ret) ? ret : (ret ? [ret] : []);
+      const newId = arr[0]?.id || ret?.id || null;
+      if (newId) {
+        row._recordId = newId;
+        state.routesByName[row.name.toLowerCase().trim()] = newId;
+      }
+      // Opportunistically capture moduleId from the response — saves the user
+      // having to enter it manually for Asset Association.
+      const moduleId = arr[0]?.moduleId || ret?.moduleId;
+      if (moduleId && !state.routeDefaults?.moduleId) {
+        state.routeDefaults = state.routeDefaults || {};
+        state.routeDefaults.moduleId = String(moduleId);
+        localStorage.setItem(ROUTE_DEFAULTS_LS_KEY, JSON.stringify(state.routeDefaults));
+        const mid = document.getElementById("routeDefModuleId");
+        if (mid) mid.value = String(moduleId);
+        log(`routes Module ID captured from response: ${moduleId}`, "ok");
+      }
+      row.status = { kind:"success", text: newId ? `Created (id ${newId})` : "Created" };
+    } catch (e) {
+      let detail = e.message;
+      if (e.body) detail = String(e.body.message || JSON.stringify(e.body)).slice(0, 220);
+      row.status = { kind:"error", text: "Create failed: " + detail };
+    }
+    renderRouteQueue();
+  }
+}
+
+// ----- Asset Association: validate + import -----
+async function resolveRouteIdByName(nameOrId) {
+  const v = String(nameOrId || "").trim();
+  if (!v) return null;
+  if (/^\d+$/.test(v)) return Number(v);
+  const cached = state.routesByName[v.toLowerCase()];
+  if (cached) return cached;
+  const target = v.toLowerCase();
+  // Try filtered picklist first (fast).
+  try {
+    const filt = encodeURIComponent(JSON.stringify({ name: { operatorId: 3, value: [v] } }));
+    const r = await api("GET", `maintenance/api/v3/picklist/routes?page=1&perPage=20&filters=${filt}`);
+    const root = r?.data || {};
+    let arr = root.pickList || root.list || [];
+    if (!Array.isArray(arr)) {
+      for (const k of Object.keys(root)) if (Array.isArray(root[k])) { arr = root[k]; break; }
+    }
+    const hit = (arr || []).find(it => String(it.label || it.name || "").toLowerCase().trim() === target);
+    const id = hit?.value ?? hit?.id;
+    if (id) { state.routesByName[target] = id; return id; }
+  } catch (_) { /* fall through */ }
+  // Fall back to the full picklist load — works even when filtered queries
+  // return 500 on this Facilio account.
+  try {
+    const items = await loadFullPicklist("routes", "routes");
+    const hit = (items || []).find(it => (it.name || "").toLowerCase().trim() === target);
+    if (hit) state.routesByName[target] = hit.id;
+    return hit ? hit.id : null;
+  } catch (_) { return null; }
+}
+
+async function validateRouteAssocRow(row) {
+  const errors = [];
+  const d = state.routeDefaults || {};
+  if (!d.moduleId) errors.push("Routes Module ID is missing — open Defaults and enter it");
+  if (!row.routeId && !row.route) errors.push("Route ID or Route Name is required");
+  if (!row.resourceType) errors.push("Resource Type is required");
+  if (!row.resourceId && !row.resource) errors.push("Resource ID or Resource Name is required");
+  if (row.sequence === "" || row.sequence == null) errors.push("Sequence is required");
+  else if (isNaN(+row.sequence)) errors.push("Sequence must be a number");
+  try {
+    // Route: prefer numeric Route ID (no lookup needed); fall back to name resolution.
+    row._routeId = null;
+    const ridStr = String(row.routeId || "").trim();
+    if (ridStr && /^\d+$/.test(ridStr)) {
+      row._routeId = Number(ridStr);
+    } else if (row.route) {
+      row._routeId = await resolveRouteIdByName(row.route);
+      if (!row._routeId) errors.push(`Route "${row.route}" not found`);
+    }
+    // Resource: same pattern — numeric Resource ID wins; otherwise look up name.
+    row._resourceId = null;
+    const sidStr = String(row.resourceId || "").trim();
+    if (sidStr && /^\d+$/.test(sidStr)) {
+      row._resourceId = Number(sidStr);
+    } else if (row.resource && row.resourceType) {
+      const rt = (row.resourceType || "asset").toLowerCase();
+      const moduleName = rt === "building" ? "building"
+                       : rt === "floor"    ? "floor"
+                       : rt === "space"    ? "space"
+                       :                     "asset";
+      row._resourceId = await portFindIdByName(moduleName, row.resource);
+      if (!row._resourceId) errors.push(`${row.resourceType} "${row.resource}" not found`);
+    }
+  } catch (e) { errors.push(e.message); }
+  if (errors.length) { row.status = { kind:"error", text: errors.join("; ") }; return false; }
+  row.status = { kind:"valid", text:"Valid" };
+  return true;
+}
+
+async function importRouteAssocBatch(rows) {
+  const d = state.routeDefaults || {};
+  for (const row of rows) {
+    const rt = (row.resourceType || "asset").toLowerCase();
+    const isAsset = rt === "asset";
+    const body = {
+      data: {
+        sequence: Number(row.sequence),
+        // Asset type → asset:{id}, space:null. Building/Floor/Space → asset:null, space:{id}.
+        asset: isAsset ? { id: Number(row._resourceId) } : null,
+        space: isAsset ? null : { id: Number(row._resourceId) },
+        description: row.description || "",
+        parentModuleId: Number(d.moduleId),
+        parentRecordId: Number(row._routeId),
+        moduleName: "multiResource"
+      }
+    };
+    log(`Asset assoc payload: ${JSON.stringify(body)}`, "dim");
+    row.status = { kind:"running", text:`Attaching ${row.resourceType}…` };
+    renderRouteQueue();
+    try {
+      const r = await api("POST", "maintenance/api/v3/modules/multiResource", body);
+      row.status = { kind:"success", text:
+        `Attached (${row.resourceType} ${row._resourceId} → route ${row._routeId}, seq ${row.sequence})` };
+    } catch (e) {
+      let detail = e.message;
+      if (e.body) detail = String(e.body.message || JSON.stringify(e.body)).slice(0, 220);
+      row.status = { kind:"error", text: "Attach failed: " + detail };
+    }
+    renderRouteQueue();
+  }
+}
+
+// ----- Bulk paste header maps for both inner sheets -----
+const ROUTE_HEADER_ALIASES = {
+  "route name": "name", "name": "name",
+  "description": "description", "desc": "description",
+  "site": "site", "site name": "site"
+};
+const ROUTE_ASSOC_HEADER_ALIASES = {
+  "route id": "routeId", "routeid": "routeId",
+  "route": "route", "route name": "route",
+  "resource type": "resourceType", "type": "resourceType",
+  "resource id": "resourceId", "resourceid": "resourceId",
+  "asset id": "resourceId", "building id": "resourceId", "floor id": "resourceId", "space id": "resourceId",
+  "resource": "resource", "resource name": "resource",
+  "asset": "resource", "asset name": "resource",
+  "building": "resource", "floor": "resource", "space": "resource",
+  "sequence": "sequence", "seq": "sequence", "sl no": "sequence",
+  "description": "description"
+};
+
+function routeAddFromTabular(lines, delim, sheet) {
+  const map = sheet === "assoc" ? ROUTE_ASSOC_HEADER_ALIASES : ROUTE_HEADER_ALIASES;
+  const target = sheet === "assoc" ? state.routeAssocQueue : state.routeQueue;
+  const blank = sheet === "assoc" ? blankRouteAssocRow : blankRouteRow;
+  const headers = lines[0].split(delim).map(h => h.trim());
+  let added = 0;
+  for (let li = 1; li < lines.length; li++) {
+    const cells = lines[li].split(delim);
+    const row = blank();
+    let hasContent = false;
+    headers.forEach((h, i) => {
+      const key = map[h.toLowerCase().trim()];
+      if (key && cells[i] != null) { row[key] = cells[i].trim(); if (cells[i].trim()) hasContent = true; }
+    });
+    if (hasContent) { target.push(row); added++; }
+  }
+  return added;
+}
+
+(function wireRoutesTab(){
+  if (!document.getElementById("routeGrid")) return;
+  if (state.routeQueue.length === 0) state.routeQueue.push(blankRouteRow());
+  if (state.routeAssocQueue.length === 0) state.routeAssocQueue.push(blankRouteAssocRow());
+  loadRouteDefaults();
+
+  bindGridInputs("#routeGrid",
+    routeActiveQueue,
+    routeActiveColumns,
+    routeBlankRow,
+    renderRouteQueue);
+
+  document.querySelectorAll("#routeInnerTabs .freq-tab").forEach(b =>
+    b.addEventListener("click", () => {
+      state.activeRouteInner = b.dataset.routeinner;
+      renderRouteQueue();
+    })
+  );
+
+  const addRow = () => { routeActiveQueue().push(routeBlankRow()); renderRouteQueue(); };
+  document.getElementById("btnRouteNewRow")?.addEventListener("click", addRow);
+  document.getElementById("btnRouteNewRow2")?.addEventListener("click", addRow);
+  document.getElementById("btnRouteDefaultsSave")?.addEventListener("click", saveRouteDefaultsFromUi);
+  document.getElementById("btnRouteDiscover")?.addEventListener("click", () => autoDiscoverRouteForm(true));
+
+  document.getElementById("btnRouteValidate")?.addEventListener("click", async () => {
+    const isAssoc = state.activeRouteInner === "assoc";
+    for (const r of routeActiveQueue()) {
+      r.status = { kind:"running", text:"Validating…" }; renderRouteQueue();
+      if (isAssoc) await validateRouteAssocRow(r); else await validateRouteRow(r);
+      renderRouteQueue();
+    }
+  });
+
+  document.getElementById("btnRouteImport")?.addEventListener("click", async () => {
+    const isAssoc = state.activeRouteInner === "assoc";
+    const valid = [];
+    for (const r of routeActiveQueue()) {
+      if (r.status?.kind === "success") continue;
+      const ok = isAssoc ? await validateRouteAssocRow(r) : await validateRouteRow(r);
+      if (ok) valid.push(r);
+    }
+    renderRouteQueue();
+    if (!valid.length) { showToast("Nothing valid to import"); return; }
+    if (isAssoc) await importRouteAssocBatch(valid);
+    else         await importRouteBatch(valid);
+    showToast((isAssoc ? "Asset Association" : "Routes") + " import complete");
+  });
+
+  document.getElementById("btnRouteRemoveDone")?.addEventListener("click", () => {
+    const isAssoc = state.activeRouteInner === "assoc";
+    if (isAssoc) {
+      state.routeAssocQueue = state.routeAssocQueue.filter(r => r.status?.kind !== "success");
+      if (!state.routeAssocQueue.length) state.routeAssocQueue.push(blankRouteAssocRow());
+    } else {
+      state.routeQueue = state.routeQueue.filter(r => r.status?.kind !== "success");
+      if (!state.routeQueue.length) state.routeQueue.push(blankRouteRow());
+    }
+    renderRouteQueue();
+  });
+  document.getElementById("btnRouteClearAll")?.addEventListener("click", () => {
+    const isAssoc = state.activeRouteInner === "assoc";
+    if (confirm(`Clear all ${isAssoc ? "Asset Association" : "Route"} rows?`)) {
+      if (isAssoc) state.routeAssocQueue = [blankRouteAssocRow()];
+      else         state.routeQueue = [blankRouteRow()];
+      renderRouteQueue();
+    }
+  });
+
+  document.getElementById("btnRouteBulkParse")?.addEventListener("click", () => {
+    const text = document.getElementById("routeBulkPaste").value;
+    if (!text.trim()) return showToast("Paste box is empty", "warn");
+    const lines = text.replace(/\r/g, "").split("\n").filter(l => l.trim());
+    if (lines.length < 2) return showToast("Need a header row + data rows", "err");
+    const delim = lines[0].includes("\t") ? "\t" : ",";
+    const added = routeAddFromTabular(lines, delim, state.activeRouteInner);
+    renderRouteQueue();
+    showToast(`Added ${added} row(s)`);
+  });
+  document.getElementById("btnRouteBulkClear")?.addEventListener("click", () => {
+    document.getElementById("routeBulkPaste").value = "";
+  });
+
+  document.getElementById("btnRouteTemplate")?.addEventListener("click", () => {
+    if (typeof XLSX === "undefined") return showToast("Excel library failed to load", "err");
+    const wb = XLSX.utils.book_new();
+    // Routes sheet
+    const rHeaders = ["Route Name","Description","Site"];
+    const rSamples = [
+      ["Morning Round","Daily morning inspection","HQ Tower"],
+      ["Weekly Chiller","Weekly chiller checks","HQ Tower"]
+    ];
+    const wsR = XLSX.utils.aoa_to_sheet([rHeaders, ...rSamples]);
+    wsR["!cols"] = rHeaders.map(h => ({ wch: 22 }));
+    XLSX.utils.book_append_sheet(wb, wsR, "Routes");
+    // Asset Association sheet — Route ID OR Name; Resource ID OR Name
+    const aHeaders = ["Route ID","Route Name","Resource Type","Resource ID","Resource Name","Sequence","Description"];
+    const aSamples = [
+      ["14","",            "asset",    "",     "Chiller-A",  "1","Check temp"],
+      ["14","",            "asset",    "5612", "",           "2",""],
+      ["",  "Morning Round","building","",     "HQ Tower",   "3","Building-wide check"],
+      ["",  "Morning Round","floor",   "",     "Ground Floor","4",""],
+      ["15","",            "space",    "",     "Lobby",      "1","Inspect lobby"]
+    ];
+    const wsA = XLSX.utils.aoa_to_sheet([aHeaders, ...aSamples]);
+    wsA["!cols"] = aHeaders.map(h => ({ wch: 22 }));
+    XLSX.utils.book_append_sheet(wb, wsA, "AssetAssociation");
+    XLSX.writeFile(wb, "routes-template.xlsx");
+    showToast("Saved routes-template.xlsx");
+  });
+  document.getElementById("btnRouteUpload")?.addEventListener("click", () => {
+    document.getElementById("routeExcelInput").click();
+  });
+  document.getElementById("routeExcelInput")?.addEventListener("change", async e => {
+    const file = e.target.files[0]; e.target.value = "";
+    if (!file || typeof XLSX === "undefined") return;
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    let totalR = 0, totalA = 0;
+    for (const sheetName of wb.SheetNames) {
+      const isAssoc = /assoc|asset/i.test(sheetName);
+      const ws = wb.Sheets[sheetName];
+      const tsv = XLSX.utils.sheet_to_csv(ws, { FS: "\t" });
+      const lines = tsv.replace(/\r/g, "").split("\n").filter(l => l.trim());
+      if (lines.length < 2) continue;
+      const added = routeAddFromTabular(lines, "\t", isAssoc ? "assoc" : "routes");
+      if (isAssoc) totalA += added; else totalR += added;
+    }
+    renderRouteQueue();
+    showToast(`Imported ${totalR} route(s) + ${totalA} association(s)`);
+  });
+
+  renderRouteQueue();
+})();
+
     $("#btnLogout").addEventListener("click", () => {
     if (!confirm("Sign out and wipe the saved API key from this browser?")) return;
     clearStoredConn();
@@ -9932,6 +11337,10 @@ function inspQaAddFromTabular(lines, delim, sheet) {
     state.inspQaQueue = [];
     state.inspQaPageQueue = [];
     state.inspQaPagesByTemplate = {};
+    state.inspScoreQueue = [];
+    state.routeQueue = [];
+    state.routeAssocQueue = [];
+    state.routesByName = {};
     $("#cfgApiKey").value = "";
     $("#loginStatus").textContent = "Signed out — saved API key wiped.";
     $("#app").classList.add("hidden");
