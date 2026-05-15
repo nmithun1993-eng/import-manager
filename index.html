@@ -392,7 +392,7 @@
 
   <!-- PPM section: contains Add, Update, and Job Plan sub-tabs -->
   <div id="tabPpm" class="tab-panel">
-    <div class="tabs" style="background: #0e111a;">
+    <div class="tabs">
       <button class="subtab active" data-subtab="add">Add PPM</button>
       <button class="subtab" data-subtab="update">Update PPM</button>
       <button class="subtab" data-subtab="jobplan">Job Plans</button>
@@ -2123,7 +2123,7 @@ function generateShareHTML({ moduleName, title, instructions, contactEmail, snap
   .grid-wrap{overflow:auto;max-height:60vh;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
   table.grid{border-collapse:separate;border-spacing:0;font-size:12.5px;table-layout:fixed;width:max-content;min-width:100%}
   table.grid th,table.grid td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0;vertical-align:top;background:var(--panel)}
-  table.grid thead th{background:#0e111a;color:var(--muted);font-weight:600;padding:8px 10px;position:sticky;top:0;z-index:5;text-align:left;white-space:nowrap}
+  table.grid thead th{background:var(--panel2, #f3f4f6);color:var(--muted);font-weight:600;padding:8px 10px;position:sticky;top:0;z-index:5;text-align:left;white-space:nowrap}
   table.grid td input,table.grid td select{width:100%;border:0;border-radius:0;background:transparent;padding:6px 8px;color:var(--text);font:inherit}
   table.grid td input:focus,table.grid td select:focus{outline:2px solid var(--accent);outline-offset:-2px;background:#0c0e14}
   table.grid tr:hover td{background:#161a26}
@@ -2810,7 +2810,7 @@ function renderFormSelector(moduleName) {
         ${ml.fields.length ? `
           <div style="margin-top:8px; max-height:240px; overflow:auto; border:1px solid var(--line); border-radius:6px;">
             <table style="width:100%; border-collapse:collapse; font-size:12px;">
-              <thead style="position:sticky; top:0; background:#0e111a;">
+              <thead style="position:sticky; top:0; background:var(--panel2, #f3f4f6);">
                 <tr style="text-align:left; border-bottom:1px solid var(--line);">
                   <th style="padding:4px 6px; width:32px;">Use</th>
                   <th style="padding:4px 6px;">Label</th>
@@ -5563,8 +5563,10 @@ function renderAddQueue() {
   });
   tbody.innerHTML = html;
   $("#addRowCount").textContent = `${queue.length} row${queue.length === 1 ? "" : "s"}`;
-  // Active freq tab indicator
-  $$(".freq-tab").forEach(b => b.classList.toggle("active", b.dataset.freq === freq));
+  // Active freq tab indicator — scope to ONLY the Add-PPM frequency strip,
+  // otherwise this wipes the active state of every other .freq-tab on the page
+  // (Asset sub-tabs, JPv2 sub-tabs, Inventory/Portfolio sub-tabs etc.).
+  $$("#freqTabs .freq-tab").forEach(b => b.classList.toggle("active", b.dataset.freq === freq));
 }
 
 function renderUpdQueue() {
@@ -7829,8 +7831,11 @@ window.addEventListener("DOMContentLoaded", () => {
     renderAddQueue
   );
 
-  // Frequency sub-tabs
-  $$(".freq-tab").forEach(b => b.addEventListener("click", () => {
+  // Frequency sub-tabs — MUST be scoped to #freqTabs. Without the scope this
+  // attaches to every .freq-tab on the page (Asset sub-tabs, JPv2 sub-tabs,
+  // Inventory sub-tabs, etc.), which then run renderAddQueue() with an
+  // undefined frequency on every click and break those other tab switchers.
+  $$("#freqTabs .freq-tab").forEach(b => b.addEventListener("click", () => {
     state.activeFreq = b.dataset.freq;
     state.expandedAsset = null;
     renderAddQueue();
