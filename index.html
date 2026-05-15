@@ -7681,6 +7681,96 @@ function renderLogsResults(view) {
 }
 
 // ---------- event wiring ----------
+//
+// Delegated tab-click handlers — attached on document.body so they keep
+// working even if the per-section init code further down throws an error
+// (which would otherwise stop later addEventListener calls from running).
+// This is the safety net that makes sub-tab switching reliable across PPM,
+// Assets, Inventory, Portfolio, Routes, Job Plans V2, Inspections, etc.
+document.addEventListener("click", e => {
+  // PPM sub-tabs: Add PPM / Update PPM / Job Plans / Job Plans V2 / Routes
+  const ppmSub = e.target.closest(".subtab[data-subtab]");
+  if (ppmSub && typeof switchPpmSub === "function") {
+    switchPpmSub(ppmSub.dataset.subtab);
+    return;
+  }
+  // Asset sub-tabs: Add Assets / Update Assets
+  const assetSub = e.target.closest("#assetSubTabs .freq-tab[data-assetsub]");
+  if (assetSub) {
+    state.activeAsset = assetSub.dataset.assetsub;
+    document.querySelectorAll("#assetSubTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === assetSub));
+    if (typeof renderAssetQueue === "function") renderAssetQueue();
+    return;
+  }
+  // Inventory sub-tabs (Item Types / Items / Tool Types / Tools)
+  const invSub = e.target.closest("#invSubTabs .freq-tab[data-invsub]");
+  if (invSub) {
+    state.activeInv = invSub.dataset.invsub;
+    document.querySelectorAll("#invSubTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === invSub));
+    if (typeof renderInvQueue === "function") renderInvQueue();
+    return;
+  }
+  // Portfolio sub-tabs (Sites / Buildings / Floors / Spaces)
+  const portSub = e.target.closest("#portSubTabs .freq-tab[data-portsub]");
+  if (portSub) {
+    state.activePort = portSub.dataset.portsub;
+    document.querySelectorAll("#portSubTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === portSub));
+    if (typeof renderPortQueue === "function") renderPortQueue();
+    if (typeof initModuleForms === "function") initModuleForms(state.activePort);
+    if (typeof renderFormSelector === "function") renderFormSelector(state.activePort);
+    return;
+  }
+  // Portfolio mode (Add / Update)
+  const portMode = e.target.closest("#portModeTabs .freq-tab[data-portmode]");
+  if (portMode) {
+    state.activePortMode = portMode.dataset.portmode;
+    document.querySelectorAll("#portModeTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === portMode));
+    if (typeof renderPortQueue === "function") renderPortQueue();
+    return;
+  }
+  // Job Plans V2 sub-tabs (Plans / Tasks)
+  const jpv2Sub = e.target.closest("#jpv2SubTabs .freq-tab[data-jpv2sub]");
+  if (jpv2Sub) {
+    state.activeJpv2 = jpv2Sub.dataset.jpv2sub;
+    document.querySelectorAll("#jpv2SubTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === jpv2Sub));
+    if (typeof renderJpv2Queue === "function") renderJpv2Queue();
+    return;
+  }
+  // Routes inner tabs (Add Routes / Asset Associations)
+  const routeInner = e.target.closest("#routeInnerTabs .freq-tab[data-routeinner]");
+  if (routeInner) {
+    state.activeRouteInner = routeInner.dataset.routeinner;
+    document.querySelectorAll("#routeInnerTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === routeInner));
+    if (typeof renderRouteQueue === "function") renderRouteQueue();
+    return;
+  }
+  // PPM frequency tabs (Daily / Weekly / Monthly / Quarterly / Half Yearly / Annually)
+  const ppmFreq = e.target.closest("#freqTabs .freq-tab[data-freq]");
+  if (ppmFreq) {
+    state.activeFreq = ppmFreq.dataset.freq;
+    state.expandedAsset = null;
+    document.querySelectorAll("#freqTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === ppmFreq));
+    if (typeof renderAddQueue === "function") renderAddQueue();
+    return;
+  }
+  // Update-PPM frequency tabs
+  const updFreq = e.target.closest("#updFreqTabs .freq-tab[data-freq]");
+  if (updFreq) {
+    state.activeUpdFreq = updFreq.dataset.freq;
+    document.querySelectorAll("#updFreqTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === updFreq));
+    if (typeof renderUpdQueue === "function") renderUpdQueue();
+    return;
+  }
+});
+
 window.addEventListener("DOMContentLoaded", () => {
   const stored = loadStoredConn();
   $("#btnTestConnect").addEventListener("click", doLogin);
