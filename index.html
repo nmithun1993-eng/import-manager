@@ -7011,15 +7011,23 @@ function setAdminUnlocked(on) {
 
 // Wire admin UI on DOM ready
 window.addEventListener("DOMContentLoaded", () => {
-  // UI cleanup: drop the "Paste rows from Excel" panels and the per-module
+  // UI cleanup: HIDE the "Paste rows from Excel" panels and the per-module
   // "Remove imported" buttons — Mithun doesn't find them useful.
+  //
+  // IMPORTANT: we used to call .remove() here, but that broke every later
+  // wireUI step because $("#btnXxxBulkParse").addEventListener(...) was
+  // called on a null element and threw, which stopped Validate all / Import
+  // all / Clear all etc. from ever being wired. Hiding keeps the nodes in
+  // the DOM so $ can still find them.
   document.querySelectorAll("details").forEach(d => {
     const sum = d.querySelector("summary");
-    if (sum && /^Paste rows from Excel/i.test((sum.textContent || "").trim())) d.remove();
+    if (sum && /^Paste rows from Excel/i.test((sum.textContent || "").trim())) {
+      d.style.display = "none";
+    }
   });
   document.querySelectorAll("button").forEach(b => {
     const t = (b.textContent || "").trim();
-    if (t === "Remove imported" || t === "Remove updated") b.remove();
+    if (t === "Remove imported" || t === "Remove updated") b.style.display = "none";
   });
 
   // Initial application — runs before app login completes so re-run after
