@@ -478,6 +478,8 @@
         </div>
       </div>
 
+      <div id="updPlannedmaintenanceFormSelector" style="margin-top:6px; font-size:12px;"></div>
+
       <div class="freq-tabs" id="updFreqTabs" style="display:flex; gap:0; margin-top:12px; border-bottom:1px solid var(--line);">
         <button class="freq-tab active" data-freq="Daily">Daily</button>
         <button class="freq-tab" data-freq="Weekly">Weekly</button>
@@ -601,6 +603,8 @@
         </div>
       </div>
 
+      <div id="jobplanFormSelector" style="margin-top:6px; font-size:12px;"></div>
+
       <details class="help" style="margin-top: 10px;">
         <summary>How grouping works (read this first)</summary>
         <div class="help-body">
@@ -722,6 +726,8 @@
         </div>
       </div>
 
+      <div id="jobplanv2FormSelector" style="margin-top:6px; font-size:12px;"></div>
+
       <div class="freq-tabs" id="jpv2SubTabs" style="display:flex; gap:0; margin-top:12px; border-bottom:1px solid var(--line);">
         <button class="freq-tab active" data-jpv2sub="plans">Sheet 1 — Job Plans</button>
         <button class="freq-tab" data-jpv2sub="tasks">Sheet 2 — Tasks</button>
@@ -807,6 +813,8 @@
         </div>
       </details>
 
+      <div id="routesFormSelector" style="margin-top:6px; font-size:12px;"></div>
+
       <details class="help" style="margin-top: 6px;">
         <summary>Paste rows from Excel</summary>
         <div class="help-body">
@@ -859,6 +867,11 @@
           <button class="btn ghost" id="btnInvClearAll">Clear all</button>
         </div>
       </div>
+
+      <div id="itemTypesFormSelector" class="invFormSelector" data-invselector="itemTypes" style="margin-top:6px; font-size:12px;"></div>
+      <div id="itemFormSelector" class="invFormSelector hidden" data-invselector="item" style="margin-top:6px; font-size:12px;"></div>
+      <div id="toolTypesFormSelector" class="invFormSelector hidden" data-invselector="toolTypes" style="margin-top:6px; font-size:12px;"></div>
+      <div id="toolFormSelector" class="invFormSelector hidden" data-invselector="tool" style="margin-top:6px; font-size:12px;"></div>
 
       <div class="freq-tabs" id="invSubTabs" style="display:flex; gap:0; margin-top:12px; border-bottom:1px solid var(--line);">
         <button class="freq-tab active" data-invsub="itemTypes">Item Types</button>
@@ -1313,6 +1326,8 @@
           </div>
         </details>
 
+        <div id="qandaPageFormSelector" style="margin-top:6px; font-size:12px;"></div>
+
         <div class="freq-tabs" id="inspQaInnerTabs" style="display:flex; gap:0; margin-top:12px; border-bottom:1px solid var(--line);">
           <button class="freq-tab active" data-qainner="pages">Pages</button>
           <button class="freq-tab" data-qainner="questions">Questions</button>
@@ -1380,6 +1395,8 @@
             </div>
           </div>
         </details>
+
+        <div id="scoringruleFormSelector" style="margin-top:6px; font-size:12px;"></div>
       </div>
 
       <div class="panel" style="padding: 0;">
@@ -1520,6 +1537,15 @@ document.addEventListener("click", e => {
     document.querySelectorAll("#invSubTabs .freq-tab").forEach(b =>
       b.classList.toggle("active", b === invSub));
     if (typeof renderInvQueue === "function") renderInvQueue();
+    // Show only the FormSelector for the active inventory sub-tab and
+    // populate it with the field list for that module.
+    document.querySelectorAll(".invFormSelector").forEach(el => {
+      el.classList.toggle("hidden", el.dataset.invselector !== state.activeInv);
+    });
+    try {
+      if (typeof initModuleForms === "function") initModuleForms(state.activeInv);
+      if (typeof renderFormSelector === "function") renderFormSelector(state.activeInv);
+    } catch (_) {}
     return;
   }
   // Portfolio sub-tabs (Sites / Buildings / Floors / Spaces)
@@ -1595,10 +1621,26 @@ document.addEventListener("click", e => {
           state.inspQueue.push(blankInspRow());
         }
         renderInspQueue();
+        try {
+          if (typeof initModuleForms === "function") initModuleForms("inspectionTemplate");
+          if (typeof renderFormSelector === "function") renderFormSelector("inspectionTemplate");
+        } catch (_) {}
       }
       if (which === "triggers"  && typeof renderInspTrigQueue === "function") renderInspTrigQueue();
-      if (which === "qanda"     && typeof renderInspQaQueue === "function") renderInspQaQueue();
-      if (which === "scoring"   && typeof renderInspScoreQueue === "function") renderInspScoreQueue();
+      if (which === "qanda"     && typeof renderInspQaQueue === "function") {
+        renderInspQaQueue();
+        try {
+          if (typeof initModuleForms === "function") initModuleForms("qandaPage");
+          if (typeof renderFormSelector === "function") renderFormSelector("qandaPage");
+        } catch (_) {}
+      }
+      if (which === "scoring"   && typeof renderInspScoreQueue === "function") {
+        renderInspScoreQueue();
+        try {
+          if (typeof initModuleForms === "function") initModuleForms("scoringrule");
+          if (typeof renderFormSelector === "function") renderFormSelector("scoringrule");
+        } catch (_) {}
+      }
     } catch (_) {}
     return;
   }
@@ -2883,11 +2925,17 @@ function parseFacilioFieldList(text) {
 }
 
 function renderFormSelector(moduleName) {
-  let hostId = moduleName + "FormSelector";
-  if (["site","building","floor","space"].includes(moduleName)) hostId = "portFormSelector";
-  if (moduleName === "asset") hostId = "assetFormSelector";
-  const host = document.getElementById(hostId);
-  if (!host) return;
+  // A module may have multiple FormSelector hosts (e.g. plannedmaintenance
+  // appears on both Add PPM and Update PPM tabs). Collect every host that
+  // should render this module's panel, then write the same HTML to all.
+  const hostIds = [moduleName + "FormSelector"];
+  if (["site","building","floor","space"].includes(moduleName)) hostIds.push("portFormSelector");
+  if (moduleName === "asset") hostIds.push("assetFormSelector");
+  if (moduleName === "plannedmaintenance") hostIds.push("updPlannedmaintenanceFormSelector");
+  // Inventory and other modules already use moduleName + "FormSelector" id
+  // pattern via the HTML we added; nothing extra needed for them here.
+  const hosts = hostIds.map(id => document.getElementById(id)).filter(Boolean);
+  if (!hosts.length) return;
   const entry = state.formsByModule[moduleName] || initModuleForms(moduleName);
   const fid = entry.selectedFormId || "";
   const extraCount = entry.fields ? entry.fields.length : 0;
@@ -2905,11 +2953,11 @@ function renderFormSelector(moduleName) {
     </tr>
   `).join("");
 
-  host.innerHTML = `
+  const html = `
     <details class="help" style="margin-top:6px; font-size:12px;"${ml.fields.length === 0 ? " open" : ""}>
       <summary>Field list — paste from Facilio's Fields admin page, then toggle which columns to use ${enabledCount ? `(<b>${enabledCount}</b> active)` : ""}</summary>
       <div class="help-body">
-        Open Facilio → Setup → Modules → ${moduleName} → <b>Fields</b> tab. Select the table rows (Label / Field Type / Type / Link Name), copy, paste below, click <b>Parse</b>. Each field becomes a row with a checkbox — turn on the ones you want as columns in the import grid.
+        Open Facilio → Setup → Modules → ${moduleName} → <b>Fields</b> tab. Select the table rows (Label / Field Type / Type / Link Name), copy, paste below, click <b>Parse</b>. Or just click <b>Auto-fetch from Facilio</b> to load them for you.
         <textarea data-fieldlist-input="${moduleName}" style="height:80px; margin-top:6px;" placeholder="Label&#9;Field Type&#9;Type&#9;Link Name&#10;Description&#9;Multi Line Text&#9;System&#9;description&#10;…"></textarea>
         <div class="card-actions" style="margin-top:6px;">
           <button class="btn success" data-fieldlist-autofetch="${moduleName}">Auto-fetch from Facilio</button>
@@ -2937,6 +2985,8 @@ function renderFormSelector(moduleName) {
       </div>
     </details>
   `;
+  // Mirror the same panel into every host id we resolved above.
+  hosts.forEach(h => { h.innerHTML = html; });
 }
 
 function rerenderModuleGrid(moduleName) {
@@ -3036,7 +3086,10 @@ const PICKLIST_LOADERS = {
   floor:          () => loadFullPicklist("floor",         "floor"),
   space:          () => loadFullPicklist("space",         "space"),
   // Job Plan task fields
-  skill:          () => loadFullPicklist("skill",         "skill")
+  skill:          () => loadFullPicklist("skill",         "skill"),
+  // Routes — looked up so users can type a route name in PPM and it
+  // resolves to a routes ID at validation time.
+  routes:         () => loadFullPicklist("routes",        "routes")
 };
 
 async function ensureDatalist(picklistKey) {
@@ -5332,7 +5385,10 @@ const FORM_COLUMNS_DEFAULT = [
   { key:"team",            label:"Team",           kind:"text",   width:"w-md", picklist:"groups" },
   { key:"visit",           label:"Visit Req?",     kind:"select", width:"w-sm",
     options:[{v:"yes",l:"Yes"},{v:"no",l:"No"}] },
-  { key:"plannerName",     label:"Planner Name *", kind:"text",   width:"w-md" }
+  { key:"plannerName",     label:"Planner Name *", kind:"text",   width:"w-md" },
+  // Routes lookup — type a route name and it resolves to a route ID at
+  // validation time (same pattern as site / building / category lookups).
+  { key:"route",           label:"Route",          kind:"text",   width:"w-md", picklist:"routes" }
 ];
 
 // Map known Facilio field names → grid column overrides. If form discovery
@@ -5540,6 +5596,7 @@ function blankAddRow(freq) {
     name:"", sites:"", building:"", category:"", scopeCategory:"",
     maintenanceType:"", subject:"", description:"", woCategory:"",
     priority:"", service:"", vendor:"", team:"", visit:"yes", plannerName:"",
+    route:"",
     // Frequency (drives schedule)
     frequency: freq || state.activeFreq || "Daily",
     // Schedule fields (some unused per frequency, that's fine)
@@ -5563,6 +5620,7 @@ function blankUpdRow(freq) {
     priority:"", service:"", vendor:"", team:"",
     visit:"",          // "" = no change; "yes"/"no" = explicit
     plannerName:"",
+    route:"",
     custom: {},
     // Schedule (optional)
     basedOn: "date",
@@ -5953,6 +6011,16 @@ async function validateAddRow(row) {
       row._vendorId = await picklistIdByName("vendors", row.vendor);
       if (!row._vendorId) throw new Error(`Vendor not found: ${row.vendor}`);
     }
+    if (row.route) {
+      // If the user typed a numeric ID, accept it as-is. Otherwise resolve the
+      // name to a route record's id via the routes module's view/all listing.
+      if (/^\d+$/.test(String(row.route).trim())) {
+        row._routeId = String(row.route).trim();
+      } else {
+        row._routeId = await findInList("routes", "routes", row.route);
+        if (!row._routeId) throw new Error(`Route not found: ${row.route}`);
+      }
+    }
     if (/asset category/i.test(row.category)) {
       row._assetCategoryId = await findInList("assetCategory", "assetCategory", row.scopeCategory);
       if (!row._assetCategoryId) throw new Error(`Asset category not found: ${row.scopeCategory}`);
@@ -6023,7 +6091,7 @@ async function validateUpdRow(row) {
   // Detect what the user wants to update.
   const FORM_FIELD_KEYS = ["name","sites","building","category","scopeCategory",
     "maintenanceType","subject","description","woCategory","priority",
-    "service","vendor","team","visit","plannerName"];
+    "service","vendor","team","visit","plannerName","route"];
   const hasFormUpdate = FORM_FIELD_KEYS.some(k => row[k] && String(row[k]).trim() !== "");
   const hasCustomUpdate = row.custom && Object.values(row.custom).some(v => v != null && String(v).trim() !== "");
   const hasScheduleInput = !!(row.startDate || row.startMonth || row.times || row.days || row.weekdays);
@@ -6104,6 +6172,14 @@ async function validateUpdRow(row) {
       if (!row._serviceId) throw new Error(`Service not found: ${row.service}`); }
     if (row.vendor)          { row._vendorId         = await picklistIdByName("vendors", row.vendor);
       if (!row._vendorId) throw new Error(`Vendor not found: ${row.vendor}`); }
+    if (row.route) {
+      if (/^\d+$/.test(String(row.route).trim())) {
+        row._routeId = String(row.route).trim();
+      } else {
+        row._routeId = await findInList("routes", "routes", row.route);
+        if (!row._routeId) throw new Error(`Route not found: ${row.route}`);
+      }
+    }
     if (row.scopeCategory && /asset category/i.test(row.category || ""))
       { row._assetCategoryId = await findInList("assetCategory", "assetCategory", row.scopeCategory);
         if (!row._assetCategoryId) throw new Error(`Asset category not found: ${row.scopeCategory}`); }
@@ -6225,6 +6301,9 @@ function buildPlannedMaintenancePayload(row) {
   if (row._woCategoryId) data.category = { id: row._woCategoryId };
   if (row._priorityId) data.priority = { id: row._priorityId };
   if (row._teamId) data.assignmentGroup = { id: row._teamId };
+  // Route lookup — _routeId is set during validation (numeric input passes
+  // through as-is; named input is resolved to the matching route record).
+  if (row._routeId) data.routes = { id: row._routeId };
   data.is_site_visit_required_ = (row.visit === "yes");
   // Custom fields discovered from the form definition pass through verbatim.
   if (row.custom) for (const [k, v] of Object.entries(row.custom)) {
@@ -6630,6 +6709,7 @@ async function importUpdRow(row) {
     if (row._teamId)     data.assignmentGroup = { id: row._teamId };
     if (row._serviceId)  data.service = { id: row._serviceId };
     if (row._vendorId)   data.vendor = { id: row._vendorId };
+    if (row._routeId)    data.routes = { id: row._routeId };
     if (row.visit === "yes" || row.visit === "no") data.is_site_visit_required_ = (row.visit === "yes");
     if (row.category)    data.assignmentTypeEnum = uppercaseCapitalFields(row.category);
     if (row._spaceCategoryId) data.spaceCategory = { id: row._spaceCategoryId };
@@ -6878,9 +6958,10 @@ function applyAdminVisibility() {
       el.style.display = (vis.subtabs[key] === false) ? "none" : "";
     });
   }
-  // Hide Field-list panels (and the Defaults panels) when admin is locked
+  // Field-list / FormSelector panels are now visible to everyone — end users
+  // need to be able to fetch + toggle which custom fields appear as columns.
   document.querySelectorAll('[id$="FormSelector"]').forEach(el => {
-    el.style.display = state.adminUnlocked ? "" : "none";
+    el.style.display = "";
   });
 }
 
@@ -7042,6 +7123,14 @@ function switchTab(name) {
       state._invDiscoveryRun = true;
       discoverInventoryFields();
     }
+    // Show only the active inventory sub-tab's Field-list panel and populate it.
+    try {
+      document.querySelectorAll(".invFormSelector").forEach(el => {
+        el.classList.toggle("hidden", el.dataset.invselector !== state.activeInv);
+      });
+      if (typeof initModuleForms === "function") initModuleForms(state.activeInv);
+      if (typeof renderFormSelector === "function") renderFormSelector(state.activeInv);
+    } catch (_) {}
   }
 }
 
@@ -7073,6 +7162,11 @@ function switchPpmSub(sub) {
       }
       renderUpdQueue();
     } catch (_) {}
+    // Field-list panel for Update PPM (shares plannedmaintenance module).
+    try {
+      if (typeof initModuleForms === "function") initModuleForms("plannedmaintenance");
+      if (typeof renderFormSelector === "function") renderFormSelector("plannedmaintenance");
+    } catch (_) {}
   }
   if (sub === "jobplan" && typeof renderJpQueue === "function") {
     try {
@@ -7081,9 +7175,17 @@ function switchPpmSub(sub) {
       }
       renderJpQueue();
     } catch (_) {}
+    try {
+      if (typeof initModuleForms === "function") initModuleForms("jobplan");
+      if (typeof renderFormSelector === "function") renderFormSelector("jobplan");
+    } catch (_) {}
   }
   if (sub === "jobplanv2" && typeof renderJpv2Queue === "function") {
     try { renderJpv2Queue(); } catch (_) {}
+    try {
+      if (typeof initModuleForms === "function") initModuleForms("jobplanv2");
+      if (typeof renderFormSelector === "function") renderFormSelector("jobplanv2");
+    } catch (_) {}
   }
   if (sub === "routes") {
     try { if (typeof autoDiscoverRouteForm === "function") autoDiscoverRouteForm(); } catch (_) {}
@@ -7092,6 +7194,10 @@ function switchPpmSub(sub) {
         state.routeQueue.push(blankRouteRow());
       }
       if (typeof renderRouteQueue === "function") renderRouteQueue();
+    } catch (_) {}
+    try {
+      if (typeof initModuleForms === "function") initModuleForms("routes");
+      if (typeof renderFormSelector === "function") renderFormSelector("routes");
     } catch (_) {}
   }
 }
