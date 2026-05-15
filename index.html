@@ -1046,6 +1046,38 @@
   <!-- ===== Settings Tab ===== -->
   <div id="tabSettings" class="tab-panel hidden">
     <div class="panel">
+      <h3>Facilio Settings <span class="muted small" style="font-weight:400;">(internal admin only)</span></h3>
+      <div id="adminLocked">
+        <p class="muted small" style="margin:0 0 10px;">Restrict what each customer / team sees when you share this URL. Enter the admin password to configure visible modules and fields.</p>
+        <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+          <label class="field" style="flex:0 0 260px; margin:0;">
+            <span class="lbl">Admin Password</span>
+            <input id="adminPasswordInput" type="password" placeholder="…" autocomplete="off" />
+          </label>
+          <button class="btn" id="btnAdminUnlock">Unlock</button>
+          <span class="muted small" id="adminUnlockStatus"></span>
+        </div>
+      </div>
+      <div id="adminPanel" class="hidden">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+          <span class="muted small">✓ Admin unlocked for this browser session</span>
+          <button class="btn ghost" id="btnAdminLock" style="padding:4px 12px;">Lock</button>
+        </div>
+        <h4 style="margin:14px 0 8px;">Visible top-level tabs</h4>
+        <div id="adminTabsList" style="display:flex; flex-direction:column; gap:6px;"></div>
+        <h4 style="margin:18px 0 8px;">Visible sub-tabs</h4>
+        <p class="muted small" style="margin:0 0 8px;">Untick sub-tabs the customer shouldn't see inside each enabled top tab.</p>
+        <div id="adminSubtabsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">
+          <button class="btn success" id="btnAdminSave">Save changes</button>
+          <button class="btn ghost" id="btnAdminResetVis">Show everything (reset)</button>
+          <span class="muted small" id="adminSaveStatus" style="margin-left:10px;"></span>
+        </div>
+        <p class="muted small" style="margin-top:10px;">Settings are saved in this browser via localStorage. To sync across users for the same Facilio org, ask for the Cloudflare KV upgrade — keeps the same UI but central storage.</p>
+      </div>
+    </div>
+
+    <div class="panel">
       <h3>Connection</h3>
       <div class="pill-row" style="margin-bottom:12px;">
         <span class="pill">Base URL: <b id="sBaseUrl">—</b></span>
@@ -2768,10 +2800,12 @@ function renderFormSelector(moduleName) {
         Open Facilio → Setup → Modules → ${moduleName} → <b>Fields</b> tab. Select the table rows (Label / Field Type / Type / Link Name), copy, paste below, click <b>Parse</b>. Each field becomes a row with a checkbox — turn on the ones you want as columns in the import grid.
         <textarea data-fieldlist-input="${moduleName}" style="height:80px; margin-top:6px;" placeholder="Label&#9;Field Type&#9;Type&#9;Link Name&#10;Description&#9;Multi Line Text&#9;System&#9;description&#10;…"></textarea>
         <div class="card-actions" style="margin-top:6px;">
-          <button class="btn" data-fieldlist-parse="${moduleName}">Parse</button>
+          <button class="btn success" data-fieldlist-autofetch="${moduleName}">Auto-fetch from Facilio</button>
+          <button class="btn" data-fieldlist-parse="${moduleName}">Parse pasted text</button>
           <button class="btn ghost" data-fieldlist-toggleall="${moduleName}" data-on="1">Enable all</button>
           <button class="btn ghost" data-fieldlist-toggleall="${moduleName}" data-on="0">Disable all</button>
           <button class="btn ghost" data-fieldlist-clear="${moduleName}">Clear list</button>
+          <span class="muted small" data-fieldlist-status="${moduleName}"></span>
         </div>
         ${ml.fields.length ? `
           <div style="margin-top:8px; max-height:240px; overflow:auto; border:1px solid var(--line); border-radius:6px;">
@@ -5212,17 +5246,21 @@ const FACILIO_FIELD_MAP = {
 // Build the form-section columns from discovered fields, falling back to the
 // default set when discovery wasn't possible.
 function buildFormColumns() {
-  if (!state.formFields) return FORM_COLUMNS_DEFAULT;
+  const formFields = state.formFields || [];
+  const manual = (typeof getManualCustomFields === "function") ? getManualCustomFields("plannedmaintenance") : [];
+
+  // No discovered or pasted fields → use the default set.
+  if (!formFields.length && !manual.length) return FORM_COLUMNS_DEFAULT;
+
   const seen = new Set();
   const cols = [];
-  for (const f of state.formFields) {
+
+  // 1. Form-discovered fields (when discovery works).
+  for (const f of formFields) {
     const known = FACILIO_FIELD_MAP[f.name];
     if (known) {
       if (!seen.has(known.key)) { cols.push({ ...known, _label: f.label, _required: f.required }); seen.add(known.key); }
     } else {
-      // Unknown field — render as a custom text input. Custom fields are
-      // stored under row.custom[name] and serialised as-is into the API
-      // payload during import.
       const key = "custom__" + f.name;
       if (!seen.has(key)) {
         cols.push({
@@ -5234,7 +5272,37 @@ function buildFormColumns() {
       }
     }
   }
-  // Always add Planner Name + scopeCategory if not already present.
+
+  // 2. When form discovery is empty (which is the common case on this org —
+  //    /v3/forms/{id} returns {code:0}), seed the column set with the
+  //    defaults so the user still sees the standard PPM columns before any
+  //    pasted custom fields are appended.
+  if (!formFields.length) {
+    for (const c of FORM_COLUMNS_DEFAULT) {
+      if (!seen.has(c.key)) { cols.push(c); seen.add(c.key); }
+    }
+  }
+
+  // 3. Manually-pasted custom fields (Field-list panel).
+  for (const name of manual) {
+    if (!name) continue;
+    const known = FACILIO_FIELD_MAP[name];
+    if (known) {
+      if (!seen.has(known.key)) { cols.push({ ...known }); seen.add(known.key); }
+    } else {
+      const key = "custom__" + name;
+      if (!seen.has(key)) {
+        cols.push({
+          key, label: name,
+          kind: "text", width: "w-md",
+          customFieldName: name
+        });
+        seen.add(key);
+      }
+    }
+  }
+
+  // Always-present columns regardless of what was discovered/pasted.
   if (!seen.has("scopeCategory"))
     cols.push({ key:"scopeCategory", label:"Scope Category", kind:"text", width:"w-md", picklist:"scopeCategory" });
   if (!seen.has("plannerName"))
@@ -5423,7 +5491,14 @@ function renderCell(col, row, idx) {
   if (col.kind === "num")    return `<td class="cell-row-num${sticky}">${idx + 1}</td>`;
   if (col.kind === "status") {
     const s = row.status || { kind:"pending", text:"Not validated" };
-    return `<td class="cell-status${sticky}"><span class="status-badge s-${s.kind}" title="${escapeAttr(s.text)}">${escapeAttr(s.text).slice(0,40)}</span></td>`;
+    // If this is an error and we have a pattern-matched hint, append it to
+    // the tooltip so the user sees plain-English guidance on hover.
+    let title = s.text;
+    if (s.kind === "error" && typeof findErrorHint === "function") {
+      const hint = findErrorHint(s.text);
+      if (hint) title = `${s.text}\n\nTip: ${hint}`;
+    }
+    return `<td class="cell-status${sticky}"><span class="status-badge s-${s.kind}" title="${escapeAttr(title)}">${escapeAttr(s.text).slice(0,40)}</span></td>`;
   }
   if (col.kind === "readonly") {
     const k = col.key === "_pmId" ? "pmId" : col.key === "_triggerId" ? "triggerId" : col.key;
@@ -6530,6 +6605,286 @@ async function importUpdRow(row) {
 //   Top:    PPM | Inventory | Settings
 //   Sub:    PPM has   Add | Update
 //           Inventory has  Item Types | Items | Tool Types | Tools
+// ---------- Admin / Facilio Settings ----------
+// Lightweight admin gate so the URL can be shared with customers and only
+// internal users see the configuration knobs. Password is intentionally
+// simple shared-secret — for sensitive use cases swap to a real auth flow.
+const ADMIN_PASSWORD = "Facilio1234!@#$";
+const ADMIN_VIS_LS = "ppm-manager.admin.visibility.v1";
+// Session-scoped unlock (clears on tab close), not persisted to disk.
+state.adminUnlocked = sessionStorage.getItem("ppm-manager.admin.unlocked") === "1";
+
+// Default visibility — everything on.
+const DEFAULT_VIS = {
+  tabs: { ppm:true, assets:true, inventory:true, portfolio:true, inspections:true, logs:true, settings:true },
+  subtabs: {
+    // PPM
+    ppm_add: true, ppm_update: true, ppm_jobplan: true, ppm_jobplanv2: true, ppm_routes: true,
+    // Assets
+    asset_add: true, asset_update: true,
+    // Inventory
+    inv_itemTypes: true, inv_item: true, inv_toolTypes: true, inv_tool: true,
+    // Portfolio
+    port_site: true, port_building: true, port_floor: true, port_space: true,
+    // Inspections
+    insp_templates: true, insp_triggers: true, insp_qanda: true, insp_scoring: true
+  }
+};
+
+function loadAdminVisibility() {
+  try {
+    const raw = localStorage.getItem(ADMIN_VIS_LS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        tabs: { ...DEFAULT_VIS.tabs, ...(parsed.tabs || {}) },
+        subtabs: { ...DEFAULT_VIS.subtabs, ...(parsed.subtabs || {}) }
+      };
+    }
+  } catch (_) {}
+  return JSON.parse(JSON.stringify(DEFAULT_VIS));
+}
+function saveAdminVisibility(vis) {
+  localStorage.setItem(ADMIN_VIS_LS, JSON.stringify(vis));
+}
+state.adminVis = loadAdminVisibility();
+
+// ---------- Org-level admin visibility via Cloudflare KV ----------
+//
+// localStorage keeps a per-browser copy so the UI never blanks while we
+// fetch the remote copy. The Cloudflare Worker stores the canonical copy
+// keyed by a hash of the API key, so every user logging into the same
+// Facilio org sees the same admin visibility (without us having to know
+// who they are).
+async function _sha256Hex(s) {
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  } catch (_) {
+    // Fallback: very weak hash for environments without subtle crypto.
+    let h = 0; for (const c of s) { h = ((h<<5)-h + c.charCodeAt(0)) | 0; }
+    return ("00000000" + (h >>> 0).toString(16)).slice(-8);
+  }
+}
+async function orgKey() {
+  // Org identity = first 32 chars of SHA-256(apiKey + "@" + baseUrl host).
+  // Including the host stops collisions across staging / prod orgs sharing a key.
+  const host = (() => { try { return new URL(state.baseUrl).host; } catch (_) { return ""; } })();
+  const h = await _sha256Hex((state.apiKey || "") + "@" + host);
+  return "admin-vis-" + h.slice(0, 32);
+}
+function _configEndpoint(path) {
+  // Always go through the Worker — same proxy URL, just /config/* paths.
+  if (!REMOTE_PROXY_URL) return null;
+  return REMOTE_PROXY_URL.replace(/\/+$/, "") + path;
+}
+async function loadAdminVisibilityFromKV() {
+  // Pulls the org-shared visibility config from KV and merges it into state.
+  // Silent no-op if the worker / KV isn't reachable — local copy stays as-is.
+  try {
+    if (!state.apiKey) return;
+    const url = _configEndpoint("/config/get");
+    if (!url) return;
+    const k = await orgKey();
+    const r = await fetch(url + "?key=" + encodeURIComponent(k), { method: "GET" });
+    if (!r.ok) return;
+    const parsed = await r.json();
+    if (!parsed || typeof parsed !== "object") return;
+    const merged = {
+      tabs:    { ...DEFAULT_VIS.tabs,    ...(parsed.tabs    || {}) },
+      subtabs: { ...DEFAULT_VIS.subtabs, ...(parsed.subtabs || {}) }
+    };
+    state.adminVis = merged;
+    saveAdminVisibility(merged);    // mirror to localStorage for next reload
+    applyAdminVisibility();
+    renderAdminPanelLists();
+  } catch (e) {
+    // Network/proxy errors are non-fatal — local copy is fine.
+    console.warn("[admin] KV load failed:", e && e.message);
+  }
+}
+async function saveAdminVisibilityToKV(vis) {
+  // Writes admin visibility to KV. Worker checks x-admin-password before
+  // accepting. Falls back to local-only if KV is unreachable.
+  saveAdminVisibility(vis);  // always keep a local copy first
+  try {
+    if (!state.apiKey) return { ok: false, reason: "no-login" };
+    const url = _configEndpoint("/config/set");
+    if (!url) return { ok: false, reason: "no-worker" };
+    const k = await orgKey();
+    const r = await fetch(url + "?key=" + encodeURIComponent(k), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-admin-password": ADMIN_PASSWORD
+      },
+      body: JSON.stringify(vis)
+    });
+    if (!r.ok) {
+      const txt = await r.text().catch(() => "");
+      return { ok: false, reason: "http-" + r.status, detail: txt };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, reason: "network", detail: e && e.message };
+  }
+}
+
+// Apply current visibility to the DOM (hide tabs/subtabs the admin disabled).
+function applyAdminVisibility() {
+  const vis = state.adminVis;
+  document.querySelectorAll(".tab[data-tab]").forEach(b => {
+    const k = b.dataset.tab;
+    b.style.display = (vis.tabs[k] === false) ? "none" : "";
+  });
+  // Sub-tabs across all top tabs
+  const subMap = {
+    ppm_add: '.subtab[data-subtab="add"]',
+    ppm_update: '.subtab[data-subtab="update"]',
+    ppm_jobplan: '.subtab[data-subtab="jobplan"]',
+    ppm_jobplanv2: '.subtab[data-subtab="jobplanv2"]',
+    ppm_routes: '.subtab[data-subtab="routes"]',
+    asset_add: '.freq-tab[data-assetsub="add"]',
+    asset_update: '.freq-tab[data-assetsub="update"]',
+    inv_itemTypes: '.freq-tab[data-invsub="itemTypes"]',
+    inv_item: '.freq-tab[data-invsub="item"]',
+    inv_toolTypes: '.freq-tab[data-invsub="toolTypes"]',
+    inv_tool: '.freq-tab[data-invsub="tool"]',
+    port_site: '.freq-tab[data-portsub="site"]',
+    port_building: '.freq-tab[data-portsub="building"]',
+    port_floor: '.freq-tab[data-portsub="floor"]',
+    port_space: '.freq-tab[data-portsub="space"]',
+    insp_templates: '#tabInspections .subtab[data-inspsub="templates"]',
+    insp_triggers: '#tabInspections .subtab[data-inspsub="triggers"]',
+    insp_qanda: '#tabInspections .subtab[data-inspsub="qanda"]',
+    insp_scoring: '#tabInspections .subtab[data-inspsub="scoring"]'
+  };
+  for (const [key, sel] of Object.entries(subMap)) {
+    document.querySelectorAll(sel).forEach(el => {
+      el.style.display = (vis.subtabs[key] === false) ? "none" : "";
+    });
+  }
+  // Hide Field-list panels (and the Defaults panels) when admin is locked
+  document.querySelectorAll('[id$="FormSelector"]').forEach(el => {
+    el.style.display = state.adminUnlocked ? "" : "none";
+  });
+}
+
+function renderAdminPanelLists() {
+  const tabsHost = document.getElementById("adminTabsList");
+  const subsHost = document.getElementById("adminSubtabsList");
+  if (!tabsHost || !subsHost) return;
+  const vis = state.adminVis;
+  const tabLabels = [
+    ["ppm", "PPM"], ["assets", "Assets"], ["inventory", "Inventory"],
+    ["portfolio", "Portfolio"], ["inspections", "Inspections"], ["logs", "Record History"]
+  ];
+  tabsHost.innerHTML = tabLabels.map(([k, l]) =>
+    `<label style="display:flex; align-items:center; gap:8px;">
+      <input type="checkbox" data-admin-tab="${k}" ${vis.tabs[k] !== false ? "checked" : ""}/> <span>${l}</span>
+    </label>`).join("");
+  const groups = [
+    { tab:"ppm", title:"PPM",
+      items:[["ppm_add","Add PPM"],["ppm_update","Update PPM"],["ppm_jobplan","Job Plans"],["ppm_jobplanv2","Job Plans V2"],["ppm_routes","Routes"]] },
+    { tab:"assets", title:"Assets",
+      items:[["asset_add","Add Assets"],["asset_update","Update Assets"]] },
+    { tab:"inventory", title:"Inventory",
+      items:[["inv_itemTypes","Item Types"],["inv_item","Items"],["inv_toolTypes","Tool Types"],["inv_tool","Tools"]] },
+    { tab:"portfolio", title:"Portfolio",
+      items:[["port_site","Sites"],["port_building","Buildings"],["port_floor","Floors"],["port_space","Spaces"]] },
+    { tab:"inspections", title:"Inspections",
+      items:[["insp_templates","Templates"],["insp_triggers","Triggers"],["insp_qanda","Q&A"],["insp_scoring","Scoring"]] }
+  ];
+  subsHost.innerHTML = groups.map(g => `
+    <details style="border:1px solid var(--line); border-radius:8px; padding:8px 12px;">
+      <summary style="cursor:pointer;"><b>${g.title}</b></summary>
+      <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:10px 18px;">
+        ${g.items.map(([k, l]) => `<label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" data-admin-subtab="${k}" ${vis.subtabs[k] !== false ? "checked" : ""}/> ${l}</label>`).join("")}
+      </div>
+    </details>`).join("");
+}
+
+function setAdminUnlocked(on) {
+  state.adminUnlocked = on;
+  if (on) sessionStorage.setItem("ppm-manager.admin.unlocked", "1");
+  else    sessionStorage.removeItem("ppm-manager.admin.unlocked");
+  document.getElementById("adminLocked")?.classList.toggle("hidden", on);
+  document.getElementById("adminPanel")?.classList.toggle("hidden", !on);
+  if (on) renderAdminPanelLists();
+  applyAdminVisibility();
+}
+
+// Wire admin UI on DOM ready
+window.addEventListener("DOMContentLoaded", () => {
+  // UI cleanup: drop the "Paste rows from Excel" panels and the per-module
+  // "Remove imported" buttons — Mithun doesn't find them useful.
+  document.querySelectorAll("details").forEach(d => {
+    const sum = d.querySelector("summary");
+    if (sum && /^Paste rows from Excel/i.test((sum.textContent || "").trim())) d.remove();
+  });
+  document.querySelectorAll("button").forEach(b => {
+    const t = (b.textContent || "").trim();
+    if (t === "Remove imported" || t === "Remove updated") b.remove();
+  });
+
+  // Initial application — runs before app login completes so re-run after
+  // login finishes too (see doLogin).
+  applyAdminVisibility();
+  if (state.adminUnlocked) setAdminUnlocked(true);
+
+  document.getElementById("btnAdminUnlock")?.addEventListener("click", () => {
+    const pw = (document.getElementById("adminPasswordInput")?.value || "").trim();
+    const status = document.getElementById("adminUnlockStatus");
+    if (pw === ADMIN_PASSWORD) {
+      setAdminUnlocked(true);
+      if (status) status.textContent = "";
+    } else {
+      if (status) status.textContent = "wrong password";
+      setTimeout(() => { if (status) status.textContent = ""; }, 3000);
+    }
+  });
+  document.getElementById("btnAdminLock")?.addEventListener("click", () => setAdminUnlocked(false));
+
+  document.getElementById("btnAdminSave")?.addEventListener("click", async () => {
+    const vis = { tabs: {...state.adminVis.tabs}, subtabs: {...state.adminVis.subtabs} };
+    document.querySelectorAll("input[data-admin-tab]").forEach(el => {
+      vis.tabs[el.dataset.adminTab] = el.checked;
+    });
+    document.querySelectorAll("input[data-admin-subtab]").forEach(el => {
+      vis.subtabs[el.dataset.adminSubtab] = el.checked;
+    });
+    state.adminVis = vis;
+    applyAdminVisibility();
+    const st = document.getElementById("adminSaveStatus");
+    if (st) st.textContent = "saving…";
+    // Push to Cloudflare KV so every user of this org sees the same config.
+    const res = await saveAdminVisibilityToKV(vis);
+    if (st) {
+      if (res.ok) {
+        st.textContent = "✓ saved (all users)";
+      } else if (res.reason === "no-worker" || res.reason === "no-login") {
+        st.textContent = "✓ saved locally (KV not configured)";
+      } else if (res.reason === "http-401") {
+        st.textContent = "✗ KV rejected — Worker ADMIN_PASSWORD doesn't match";
+      } else if (res.reason && res.reason.startsWith("http-")) {
+        st.textContent = "✗ KV save failed (" + res.reason + ") — saved locally only";
+      } else {
+        st.textContent = "✗ network error — saved locally only";
+      }
+      setTimeout(() => {
+        if (/^(✓|✗|saving)/.test(st.textContent || "")) st.textContent = "";
+      }, 5000);
+    }
+  });
+  document.getElementById("btnAdminResetVis")?.addEventListener("click", async () => {
+    if (!confirm("Reset to show every tab and sub-tab?")) return;
+    state.adminVis = JSON.parse(JSON.stringify(DEFAULT_VIS));
+    renderAdminPanelLists();
+    applyAdminVisibility();
+    await saveAdminVisibilityToKV(state.adminVis);
+  });
+});
+
 function switchTab(name) {
   $$(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
   $("#tabPpm").classList.toggle("hidden", name !== "ppm");
@@ -6662,6 +7017,11 @@ async function doLogin(opts) {
   $("#app").classList.remove("hidden");
   $("#sBaseUrl").textContent = state.baseUrl;
   $("#sOrgId").textContent = state.orgId || "—";
+  // Re-apply admin visibility now that the app is shown, then refresh from
+  // the Cloudflare KV-backed config so end-users see whatever the admin
+  // last saved for this org (not just whatever was in their localStorage).
+  try { applyAdminVisibility(); } catch (_) {}
+  try { loadAdminVisibilityFromKV(); } catch (_) {}
   $("#connText").textContent = "Connected to " + new URL(state.baseUrl).host;
   log("Connection OK", "ok");
   // Forms now load lazily per-tab — see ensureModuleForms() and the form
@@ -7367,10 +7727,48 @@ window.addEventListener("DOMContentLoaded", () => {
       if (moduleName === "asset" && typeof renderAssetQueue === "function") renderAssetQueue();
     }
 
-    // Field list parse / toggle-all / clear
+    // Field list auto-fetch / parse / toggle-all / clear
+    const flAutoFetch = e.target.closest("button[data-fieldlist-autofetch]");
     const flParse = e.target.closest("button[data-fieldlist-parse]");
     const flToggleAll = e.target.closest("button[data-fieldlist-toggleall]");
     const flClear = e.target.closest("button[data-fieldlist-clear]");
+    if (flAutoFetch) {
+      const moduleName = flAutoFetch.dataset.fieldlistAutofetch;
+      const status = document.querySelector(`[data-fieldlist-status="${moduleName}"]`);
+      if (status) status.textContent = "fetching…";
+      flAutoFetch.disabled = true;
+      try {
+        const { fields, endpoint } = await inspectModuleFields(moduleName);
+        if (!fields.length) {
+          if (status) status.textContent = "no fields returned by API — paste manually below";
+          showToast("Auto-fetch returned no fields — try pasting from Facilio's Fields admin page", "warn");
+        } else {
+          const existing = getModuleFieldList(moduleName);
+          const enabledNames = new Set(existing.fields.filter(f => f.enabled).map(f => f.name));
+          // Skip clearly system/housekeeping fields by default.
+          const skipPatterns = [/^sys[A-Z]/, /^id$/, /^localId$/, /^moduleId$/, /^orgId$/, /^formId$/, /^actionFormId$/];
+          const items = fields
+            .filter(f => !skipPatterns.some(p => p.test(f.name)))
+            .map(f => ({
+              name: f.name,
+              label: f.displayName || f.name,
+              type: f.dataType || "TEXT",
+              enabled: enabledNames.has(f.name)  // preserve prior enabled state, default off
+            }));
+          setModuleFieldList(moduleName, { fields: items });
+          renderFormSelector(moduleName);
+          log(`Auto-fetched ${items.length} field(s) for ${moduleName} via ${endpoint}`, "ok");
+          if (status) status.textContent = `✓ fetched ${items.length} field(s)`;
+          showToast(`Fetched ${items.length} ${moduleName} field(s) — toggle the ones you want as columns`);
+        }
+      } catch (e) {
+        if (status) status.textContent = "fetch failed";
+        log(`Auto-fetch failed for ${moduleName}: ${e.message}`, "err");
+        showToast("Auto-fetch failed: " + e.message, "err");
+      } finally {
+        flAutoFetch.disabled = false;
+      }
+    }
     if (flParse) {
       const moduleName = flParse.dataset.fieldlistParse;
       const ta = document.querySelector(`textarea[data-fieldlist-input="${moduleName}"]`);
@@ -11316,6 +11714,223 @@ function routeAddFromTabular(lines, delim, sheet) {
   });
 
   renderRouteQueue();
+})();
+
+// ---------- AI Helper (pattern hints + optional Anthropic Claude) ----------
+// Pattern hints work without an API key. The Ask AI modal sends recent
+// Logs + visible error rows to Claude when the user has saved a key.
+
+const AI_KEY_LS = "ppm-manager.ai.apikey";
+const AI_MODEL_LS = "ppm-manager.ai.model";
+
+const ERROR_HINTS = [
+  { match: /\bHTTP\s*429\b/i, hint: "Facilio is rate-limiting your API key. Wait 60–90 seconds and retry." },
+  { match: /Invalid page id/i, hint: "The Scoring URL needs the Q&A Page ID, not the Template ID. Open the Scoring row's Page ID column — auto-fills if you load via Load Questions." },
+  { match: /Invalid parent/i, hint: "The parent record ID is wrong for the module you're posting to. For Q&A questions, parent is the Page ID. For Triggers, the Template ID." },
+  { match: /Site\s+\".*\"\s+not found/i, hint: "Site name doesn't match anything in your Facilio account. Check spelling/case, or use the numeric Site ID instead." },
+  { match: /(Asset|Building|Floor|Space|Route)\s+\".*\"\s+not found/i, hint: "Lookup failed for that name. Try the numeric ID instead, or check the spelling in Facilio's UI." },
+  { match: /Resource is required/i, hint: "Resource Type + Resource (or Resource ID) must be filled when Scope = Single." },
+  { match: /Routes Module ID is missing/i, hint: "Open PPM → Routes → Defaults → Re-discover. After creating one route, the Module ID auto-fills from the response." },
+  { match: /Form ID is missing/i, hint: "Open the tab's Defaults panel and click Re-discover. Form ID is auto-fetched from your account." },
+  { match: /Position\s+\d+\s+is already used/i, hint: "That Sl No is taken on this page. Pick a different number or leave Position blank for auto-assign." },
+  { match: /\[object Object\]/i, hint: "A value got mangled into an object string somewhere. Clear the cell and re-enter the name or numeric ID." },
+  { match: /Error Occurred.*code\s*8/i, hint: "Facilio's generic 'something failed' response — usually a required field is missing from the payload. Compare with a captured POST from Facilio's UI (DevTools → Network)." },
+  { match: /Couldn't fetch template/i, hint: "Template fetch failed — usually rate-limiting (429) or a wrong Template ID. Wait 60s and retry." },
+  { match: /spaceCategory.*is required/i, hint: "Space Category must be filled for every Portfolio Space row on your account." },
+  { match: /Page\s+\".*\"\s+not found in template/i, hint: "Add the page first via Q&A → Pages sub-grid, OR use a numeric Page ID directly in the Page column." },
+];
+
+function findErrorHint(errorText) {
+  if (!errorText) return null;
+  for (const h of ERROR_HINTS) {
+    if (h.match.test(errorText)) return h.hint;
+  }
+  return null;
+}
+
+function loadAiSettings() {
+  try {
+    const k = localStorage.getItem(AI_KEY_LS);
+    if (k) document.getElementById("aiApiKey").value = k;
+    const m = localStorage.getItem(AI_MODEL_LS);
+    if (m) document.getElementById("aiModel").value = m;
+  } catch (_) {}
+}
+function saveAiSettings() {
+  const k = document.getElementById("aiApiKey")?.value.trim() || "";
+  const m = document.getElementById("aiModel")?.value || "claude-sonnet-4-5";
+  if (k) localStorage.setItem(AI_KEY_LS, k); else localStorage.removeItem(AI_KEY_LS);
+  localStorage.setItem(AI_MODEL_LS, m);
+  const st = document.getElementById("aiStatus");
+  if (st) {
+    st.textContent = k ? "✓ saved" : "key cleared";
+    setTimeout(() => { if (st.textContent === "✓ saved" || st.textContent === "key cleared") st.textContent = ""; }, 3000);
+  }
+}
+
+async function testAi() {
+  const key = (document.getElementById("aiApiKey")?.value || "").trim();
+  if (!key) { showToast("Enter an Anthropic API key first", "warn"); return; }
+  const model = document.getElementById("aiModel")?.value || "claude-sonnet-4-5";
+  const st = document.getElementById("aiStatus");
+  if (st) st.textContent = "testing…";
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 32,
+        messages: [{ role: "user", content: "Reply with just OK" }]
+      })
+    });
+    const j = await r.json();
+    if (r.ok) {
+      if (st) st.textContent = `✓ ok (model=${j.model || model})`;
+      showToast("AI key works", "ok");
+    } else {
+      const msg = j.error?.message || JSON.stringify(j).slice(0, 200);
+      if (st) st.textContent = "✗ " + msg.slice(0, 100);
+      showToast("AI test failed — see Settings", "err");
+    }
+  } catch (e) {
+    if (st) st.textContent = "✗ " + e.message;
+    showToast("AI test failed: " + e.message, "err");
+  }
+}
+
+// Snapshot recent context for the AI prompt: logs + any errored rows
+// across the queues we know about.
+function snapshotAppContext() {
+  const lines = [];
+  try {
+    const logEl = document.getElementById("logs");
+    if (logEl) {
+      const all = Array.from(logEl.querySelectorAll("div"));
+      lines.push("=== Recent log lines (most recent last) ===");
+      all.slice(-40).forEach(d => lines.push(d.textContent || ""));
+    }
+  } catch (_) {}
+  // Walk every named queue in state and collect any row whose status is "error"
+  const errored = [];
+  const queueNames = [
+    "addQueue","updQueue","portQueue","portUpdQueue",
+    "invQueue","jpQueue","jpv2Queue","assetQueue",
+    "inspQueue","inspTrigQueue","inspQaQueue","inspQaPageQueue","inspScoreQueue",
+    "routeQueue","routeAssocQueue"
+  ];
+  for (const name of queueNames) {
+    const q = state[name];
+    if (!q) continue;
+    // Some queues are arrays, some are objects of arrays (e.g. per-frequency)
+    const visit = (arr, key) => {
+      if (!Array.isArray(arr)) return;
+      arr.forEach((row, idx) => {
+        if (row?.status?.kind === "error") {
+          const summary = {};
+          for (const [k, v] of Object.entries(row)) {
+            if (k.startsWith("_")) continue;
+            if (typeof v === "object") continue;
+            if (v === "" || v == null) continue;
+            summary[k] = v;
+          }
+          errored.push({ queue: name + (key ? `[${key}]` : ""), row: idx + 1,
+            status: row.status.text, data: summary });
+        }
+      });
+    };
+    if (Array.isArray(q)) visit(q);
+    else if (typeof q === "object") for (const [k, v] of Object.entries(q)) visit(v, k);
+  }
+  if (errored.length) {
+    lines.push("");
+    lines.push("=== Errored rows ===");
+    for (const e of errored.slice(0, 20)) {
+      lines.push(`- ${e.queue} row ${e.row}: ${e.status}`);
+      lines.push(`  data: ${JSON.stringify(e.data)}`);
+    }
+  }
+  return lines.join("\n");
+}
+
+async function askAi(userQuestion, includeContext) {
+  const key = localStorage.getItem(AI_KEY_LS);
+  if (!key) {
+    return "No Anthropic API key saved. Open Settings → AI Helper, paste your key from console.anthropic.com, click Save, then try again.";
+  }
+  const model = localStorage.getItem(AI_MODEL_LS) || "claude-sonnet-4-5";
+  const context = includeContext ? snapshotAppContext() : "";
+  const system = "You are a debugging assistant for the Facilio Import Manager — a browser tool that bulk-imports records (PPMs, assets, sites, buildings, floors, spaces, inspection templates, triggers, Q&A, scoring rules, routes) into Facilio via /maintenance/api/v3 endpoints. The user is not technical. When the logs show errors, explain in plain English what went wrong and what to do, in 3-6 short bullet points. Reference specific row numbers and field names from the logs/context when you can. Keep it short. If the user typed a question, address that directly.";
+  const userMsg = [
+    userQuestion?.trim() || "Do an auto-diagnosis of the most recent errors. What went wrong and how do I fix it?",
+    context ? `\n\nApp state snapshot:\n${context}` : ""
+  ].join("");
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1024,
+        system,
+        messages: [{ role: "user", content: userMsg }]
+      })
+    });
+    const j = await r.json();
+    if (!r.ok) return `AI call failed: ${j.error?.message || r.status}`;
+    const blocks = j.content || [];
+    return blocks.map(b => b.text || "").join("\n").trim() || "(empty response)";
+  } catch (e) {
+    return "AI call failed: " + e.message;
+  }
+}
+
+(function wireAi(){
+  loadAiSettings();
+  document.getElementById("btnAiSave")?.addEventListener("click", saveAiSettings);
+  document.getElementById("btnAiTest")?.addEventListener("click", testAi);
+
+  const modal = document.getElementById("aiModal");
+  const includeBtn = document.getElementById("btnAiInclude");
+  let includeContext = true;
+  const updateIncludeBtn = () => {
+    if (includeBtn) includeBtn.textContent = includeContext
+      ? "Include Logs & Error rows ✓"
+      : "Include Logs & Error rows ✗";
+  };
+
+  document.getElementById("btnAskAi")?.addEventListener("click", () => {
+    modal.classList.remove("hidden");
+    document.getElementById("aiResponse").innerHTML = '<span class="muted">Response appears here.</span>';
+    document.getElementById("aiQuestion").focus();
+  });
+  document.getElementById("btnAiClose")?.addEventListener("click", () => modal.classList.add("hidden"));
+  // Click outside the dialog box closes
+  modal?.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
+  includeBtn?.addEventListener("click", () => { includeContext = !includeContext; updateIncludeBtn(); });
+  updateIncludeBtn();
+
+  document.getElementById("btnAiSend")?.addEventListener("click", async () => {
+    const q = document.getElementById("aiQuestion").value;
+    const status = document.getElementById("aiSendStatus");
+    const respEl = document.getElementById("aiResponse");
+    if (status) status.textContent = "thinking…";
+    respEl.innerHTML = '<span class="muted">Asking Claude…</span>';
+    const txt = await askAi(q, includeContext);
+    if (status) status.textContent = "";
+    respEl.textContent = txt;
+  });
+
 })();
 
     $("#btnLogout").addEventListener("click", () => {
