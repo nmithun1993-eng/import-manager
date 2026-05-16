@@ -12758,11 +12758,15 @@ async function discoverApps() {
   for (const url of tries) {
     try {
       const res = await api("GET", url);
-      const root = res?.data || res;
+      // Peel both {data:...} and {result:...} wrappers — Facilio nests
+      // application/role data under "result" on most setup endpoints.
+      let root = res;
+      if (root && root.data && typeof root.data === "object") root = root.data;
+      if (root && root.result && typeof root.result === "object") root = root.result;
       let arr = [];
       if (Array.isArray(root)) arr = root;
       else if (root && typeof root === "object") {
-        for (const k of ["applications", "apps", "list", "data"]) {
+        for (const k of ["applications", "apps", "Applications", "Apps", "list", "data"]) {
           if (Array.isArray(root[k])) { arr = root[k]; break; }
         }
         if (!arr.length) {
