@@ -13238,6 +13238,14 @@ function downloadUsersXlsx() {
 document.addEventListener("click", async e => {
   if (e.target.id === "btnUserExportFetch") {
     const st = document.getElementById("userExportStatus");
+    // Hard gate: if no Main App ID is saved, fail loudly with instructions.
+    if (!state.userDefaults?.mainAppId) {
+      if (st) {
+        st.innerHTML = `<b style="color:var(--err);">✗ Main App ID is not set.</b><br/>
+          Go to <b>Main App</b> sub-tab → Defaults section → type <code>4580</code> (or whatever the appId is in your captured POST) → click <b>Save</b>. Then come back here and click Fetch again.`;
+      }
+      return;
+    }
     if (st) st.textContent = "Fetching user list…";
     state.userExport = [];
     renderUserExport();
@@ -13421,12 +13429,10 @@ function initUsersTab() {
     renderUserQueue
   );
   renderUserQueue();
-  // First time the user opens this tab without a saved Main App ID, auto-
-  // run the Discover flow so they don't have to hunt for the value.
-  if (!state.userDefaults.mainAppId && !state._userAppAutoDiscoverRan) {
-    state._userAppAutoDiscoverRan = true;
-    autoDiscoverMainAppId();
-  }
+  // Auto-discovery is OFF by default — the discovery endpoints noisily 404
+  // on most orgs and the user can paste the Main App ID directly from any
+  // captured "adduser" POST under appId. They can still click Discover
+  // manually if they want to try.
 }
 </script>
 </body>
