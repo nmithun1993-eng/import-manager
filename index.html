@@ -1001,11 +1001,19 @@
       <button class="subtab" data-usersub="vendor">Vendor</button>
       <button class="subtab" data-usersub="client">Client Portal</button>
       <button class="subtab" data-usersub="occupant">Occupant Portal</button>
+      <button class="subtab" data-usersub="tenant">Tenant <span style="display:inline-block; margin-left:4px; padding:1px 6px; font-size:9px; font-weight:600; background:#fef3c7; color:#78350f; border-radius:8px; vertical-align:middle;">BETA</span></button>
       <button class="subtab" data-usersub="bulkInvite">Bulk Invite</button>
-      <button class="subtab" data-usersub="export">Export</button>
     </div>
 
     <div id="userSubMainApp">
+      <!-- Inner section nav: Add Users / Export Users -->
+      <div class="freq-tabs" id="mainAppSecTabs" style="display:flex; gap:0; padding:0 14px; margin-top:6px; border-bottom:1px solid var(--line);">
+        <button class="freq-tab active" data-mainappsec="add">Add Users</button>
+        <button class="freq-tab" data-mainappsec="export">Export Users</button>
+      </div>
+
+      <!-- ----- Section: Add Main App Users ----- -->
+      <div id="mainAppSecAdd">
       <div class="panel" style="padding: 12px 14px;">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
           <div>
@@ -1100,68 +1108,81 @@
           <button class="btn ghost" id="btnUserNewRow2">+ Add row</button>
         </div>
       </div>
+      </div>
+      <!-- ----- End: Add Main App Users ----- -->
+
+      <!-- ----- Section: Export Main App Users ----- -->
+      <div id="mainAppSecExport" class="hidden">
+        <div class="panel" style="padding: 12px 14px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h3 style="margin:0 0 4px;">Export Main App Users</h3>
+              <p class="muted small" style="margin:0;">Fetch every Main App user on this Facilio org with their email, role, accessible spaces, groups, and permission sets. Useful for periodic audits — pulls the data, shows it in a table, lets you download as an Excel file. (Vendor / Client / Occupant portal exports will live inside their own sub-tabs once those portals are enabled.)</p>
+            </div>
+            <div class="card-actions" style="margin:0;">
+              <button class="btn" id="btnUserExportFetch">Fetch all users</button>
+              <button class="btn success" id="btnUserExportXlsx" disabled>Download Excel</button>
+              <button class="btn ghost" id="btnUserExportClear">Clear</button>
+            </div>
+          </div>
+          <p class="muted small" style="margin:8px 0 0;">Tip: load the Role / Group / Permission Set lookup tables on the <b>Add Users</b> section first — that way IDs in the export are auto-translated into names. Otherwise you'll see numeric IDs.</p>
+          <div id="userExportStatus" class="muted small" style="margin-top:6px;"></div>
+        </div>
+
+        <div class="panel" style="padding: 0;">
+          <div class="grid-scroll" style="max-height:60vh; overflow:auto;">
+            <table class="grid" id="userExportGrid" style="width:max-content; min-width:100%;">
+              <thead>
+                <tr id="userExportGridHead">
+                  <th style="padding:8px 10px;">#</th>
+                  <th style="padding:8px 10px;">Name</th>
+                  <th style="padding:8px 10px;">Email</th>
+                  <th style="padding:8px 10px;">Phone</th>
+                  <th style="padding:8px 10px;">Role</th>
+                  <th style="padding:8px 10px;">App</th>
+                  <th style="padding:8px 10px;">Accessible Space</th>
+                  <th style="padding:8px 10px;">Groups</th>
+                  <th style="padding:8px 10px;">Permission Sets</th>
+                  <th style="padding:8px 10px;">Status</th>
+                  <th style="padding:8px 10px;">User ID</th>
+                  <th style="padding:8px 10px;">People ID</th>
+                </tr>
+              </thead>
+              <tbody id="userExportGridBody"></tbody>
+            </table>
+          </div>
+          <div style="padding: 10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+            <span class="muted small" id="userExportRowCount">0 users</span>
+          </div>
+        </div>
+      </div>
+      <!-- ----- End: Export Main App Users ----- -->
     </div>
 
     <div id="userSubVendor" class="hidden">
-      <div class="panel" style="padding: 12px 14px;">
-        <p class="muted small" style="margin:0;">Vendor portal user provisioning — coming soon once we have the captured API payload.</p>
+      <div class="panel" style="padding: 24px; text-align:center; background:#fff7ed; border:1px solid #fed7aa;">
+        <div style="font-size:32px; margin-bottom:8px;">🚧</div>
+        <h3 style="margin:0 0 8px; color:#9a3412;">Vendor Portal — Coming Soon</h3>
+        <p style="margin:0; color:#7c2d12;">Vendor portal user provisioning is <b>not yet available</b> in this tool. Please do not attempt to add vendor users from here — use Facilio's <b>Setup → Users And Access → Users</b> page directly for now.</p>
+        <p class="muted small" style="margin:10px 0 0;">This sub-tab will be enabled once we capture and verify the Vendor portal's <code>iamuser/adduser</code> payload shape.</p>
       </div>
     </div>
 
     <div id="userSubClient" class="hidden">
-      <div class="panel" style="padding: 12px 14px;">
-        <p class="muted small" style="margin:0;">Client portal user provisioning — coming soon once we have the captured API payload.</p>
+      <div class="panel" style="padding: 24px; text-align:center; background:#fff7ed; border:1px solid #fed7aa;">
+        <div style="font-size:32px; margin-bottom:8px;">🚧</div>
+        <h3 style="margin:0 0 8px; color:#9a3412;">Client Portal — Coming Soon</h3>
+        <p style="margin:0; color:#7c2d12;">Client portal user provisioning is <b>not yet available</b> in this tool. Please do not attempt to add client users from here — use Facilio's <b>Setup → Users And Access → Users</b> page directly for now.</p>
+        <p class="muted small" style="margin:10px 0 0;">This sub-tab will be enabled once we capture and verify the Client portal's <code>iamuser/adduser</code> payload shape.</p>
       </div>
     </div>
 
     <div id="userSubOccupant" class="hidden">
-      <div class="panel" style="padding: 12px 14px;">
-        <p class="muted small" style="margin:0;">Occupant portal user provisioning — coming soon once we have the captured API payload.</p>
-      </div>
-    </div>
-
-    <div id="userSubExport" class="hidden">
-      <div class="panel" style="padding: 12px 14px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-          <div>
-            <h3 style="margin:0 0 4px;">Export Existing Users</h3>
-            <p class="muted small" style="margin:0;">Fetch every user on this Facilio org with their email, role, accessible spaces, groups, and permission sets. Useful for periodic audits — pulls the data, shows it in a table, lets you download as an Excel file.</p>
-          </div>
-          <div class="card-actions" style="margin:0;">
-            <button class="btn" id="btnUserExportFetch">Fetch all users</button>
-            <button class="btn success" id="btnUserExportXlsx" disabled>Download Excel</button>
-            <button class="btn ghost" id="btnUserExportClear">Clear</button>
-          </div>
-        </div>
-        <p class="muted small" style="margin:8px 0 0;">Tip: load the Role / Group / Permission Set lookup tables on the <b>Main App</b> sub-tab first — that way IDs in the export are auto-translated into names. Otherwise you'll see numeric IDs.</p>
-        <div id="userExportStatus" class="muted small" style="margin-top:6px;"></div>
-      </div>
-
-      <div class="panel" style="padding: 0;">
-        <div class="grid-scroll" style="max-height:60vh; overflow:auto;">
-          <table class="grid" id="userExportGrid" style="width:max-content; min-width:100%;">
-            <thead>
-              <tr id="userExportGridHead">
-                <th style="padding:8px 10px;">#</th>
-                <th style="padding:8px 10px;">Name</th>
-                <th style="padding:8px 10px;">Email</th>
-                <th style="padding:8px 10px;">Phone</th>
-                <th style="padding:8px 10px;">Role</th>
-                <th style="padding:8px 10px;">App</th>
-                <th style="padding:8px 10px;">Accessible Space</th>
-                <th style="padding:8px 10px;">Groups</th>
-                <th style="padding:8px 10px;">Permission Sets</th>
-                <th style="padding:8px 10px;">Status</th>
-                <th style="padding:8px 10px;">User ID</th>
-                <th style="padding:8px 10px;">People ID</th>
-              </tr>
-            </thead>
-            <tbody id="userExportGridBody"></tbody>
-          </table>
-        </div>
-        <div style="padding: 10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-          <span class="muted small" id="userExportRowCount">0 users</span>
-        </div>
+      <div class="panel" style="padding: 24px; text-align:center; background:#fff7ed; border:1px solid #fed7aa;">
+        <div style="font-size:32px; margin-bottom:8px;">🚧</div>
+        <h3 style="margin:0 0 8px; color:#9a3412;">Occupant Portal — Coming Soon</h3>
+        <p style="margin:0; color:#7c2d12;">Occupant portal user provisioning is <b>not yet available</b> in this tool. Please do not attempt to add occupant users from here — use Facilio's <b>Setup → Users And Access → Users</b> page directly for now.</p>
+        <p class="muted small" style="margin:10px 0 0;">This sub-tab will be enabled once we capture and verify the Occupant portal's <code>iamuser/adduser</code> payload shape.</p>
       </div>
     </div>
 
@@ -1180,6 +1201,169 @@
         <textarea id="userBulkInviteEmails" placeholder="user1@example.com&#10;user2@example.com&#10;user3@example.com" style="width:100%; height:200px; margin-top:10px; font-family:ui-monospace,monospace; font-size:12px;"></textarea>
         <div id="userBulkInviteLog" style="margin-top:10px; font-size:12px;"></div>
       </div>
+    </div>
+
+    <!-- ===== Tenant sub-tab (under Users) ===== -->
+    <div id="userSubTenant" class="hidden">
+      <!-- Beta / "in testing" banner — the Tenant flows are functional but
+           Mithun is still verifying them, so everyone using this tab should
+           double-check each import on the Facilio side before relying on it. -->
+      <div style="margin: 10px 14px 0; padding: 10px 14px; background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+        <div style="font-size: 20px;">⚠️</div>
+        <div>
+          <b style="color: #78350f;">Beta — Testing in progress</b>
+          <p style="margin: 2px 0 0; color: #78350f; font-size: 12px;">The Tenant / Tenant Contact / Tenant Units flows are functional but not yet fully verified. <b>Always check the results in Facilio</b> after each import. Report any oddities so we can fix them before this comes out of beta.</p>
+        </div>
+      </div>
+
+      <!-- Inner section nav: Add Tenants / Tenant Contacts / Tenant Units -->
+      <div class="freq-tabs" id="tenantSecTabs" style="display:flex; gap:0; padding:0 14px; margin-top:6px; border-bottom:1px solid var(--line);">
+        <button class="freq-tab active" data-tenantsec="add">Add Tenants</button>
+        <button class="freq-tab" data-tenantsec="contacts">Tenant Contacts</button>
+        <button class="freq-tab" data-tenantsec="units">Tenant Units</button>
+      </div>
+
+      <!-- ----- Section: Add Tenants ----- -->
+      <div id="tenantSecAdd">
+      <div class="panel" style="padding: 12px 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3 style="margin:0 0 4px;">Add Tenants</h3>
+            <p class="muted small" style="margin:0;">Bulk-create tenants. The Primary Contact (Name + Email + Phone) is sent in the same payload, so Facilio auto-creates a matching Tenant Contact record under the tenant. Lease dates are optional.</p>
+          </div>
+          <div class="card-actions" style="margin:0;">
+            <button class="btn ghost" id="btnTenantTemplate">Template</button>
+            <button class="btn ghost" id="btnTenantUpload">Upload</button>
+            <input type="file" id="tenantExcelInput" accept=".xlsx,.xls,.csv" style="display:none" />
+            <button class="btn" id="btnTenantNewRow">+ New row</button>
+            <button class="btn secondary" id="btnTenantValidate">Validate all</button>
+            <button class="btn success" id="btnTenantImport">Import all</button>
+            <button class="btn ghost" id="btnTenantClearAll">Clear all</button>
+          </div>
+        </div>
+
+        <details class="help" open style="margin-top:12px;">
+          <summary>Defaults</summary>
+          <div class="help-body">
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+              <label class="field" style="flex:0 0 200px; margin:0;">
+                <span class="lbl">Tenant Form ID *</span>
+                <input id="tenantDefFormId" placeholder="(discovering…)" />
+              </label>
+              <button class="btn ghost" id="btnTenantDiscoverForm">Re-discover</button>
+              <button class="btn ghost" id="btnTenantDefaultsSave">Save</button>
+              <span class="muted small" id="tenantDefaultsStatus"></span>
+            </div>
+            <p class="muted small" style="margin:8px 0 0;"><b>Tenant Form ID</b> auto-discovers from your <code>tenant</code> module on first open. It's sent as both <code>formId</code> and <code>actionFormId</code> in the payload (matches Facilio's UI behaviour).</p>
+            <p class="muted small" style="margin:8px 0 0;">Portal access (Grant Portal?, Role, Permission Sets, Send Invite) is set <b>per row</b> on the grid below — that way each tenant can have different role / permission set / invite preferences, which is the whole point of bulk import.</p>
+          </div>
+        </details>
+
+        <div id="tenantFormSelector" style="margin-top:6px; font-size:12px;"></div>
+      </div>
+
+      <div class="panel" style="padding: 0;">
+        <div class="grid-scroll">
+          <table class="grid" id="tenantGrid">
+            <thead><tr id="tenantGridHead"></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div style="padding: 10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+          <span class="muted small" id="tenantRowCount">0 rows</span>
+          <button class="btn ghost" id="btnTenantNewRow2">+ Add row</button>
+        </div>
+      </div>
+      </div>
+      <!-- ----- End: Add Tenants ----- -->
+
+      <!-- ----- Section: Tenant Contacts ----- -->
+      <div id="tenantSecContacts" class="hidden">
+      <div class="panel" style="padding: 12px 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3 style="margin:0 0 4px;">Add Tenant Contacts</h3>
+            <p class="muted small" style="margin:0;">Bulk-add additional contacts to existing tenants. Each row can be linked to any tenant (by name or ID) and can optionally also receive Tenant Portal access — all set per row, so different contacts can have different role / permission / invite preferences.</p>
+          </div>
+          <div class="card-actions" style="margin:0;">
+            <button class="btn ghost" id="btnTcTemplate">Template</button>
+            <button class="btn ghost" id="btnTcUpload">Upload</button>
+            <input type="file" id="tcExcelInput" accept=".xlsx,.xls,.csv" style="display:none" />
+            <button class="btn" id="btnTcNewRow">+ New row</button>
+            <button class="btn secondary" id="btnTcValidate">Validate all</button>
+            <button class="btn success" id="btnTcImport">Import all</button>
+            <button class="btn ghost" id="btnTcClearAll">Clear all</button>
+          </div>
+        </div>
+
+        <details class="help" open style="margin-top:12px;">
+          <summary>Defaults</summary>
+          <div class="help-body">
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+              <label class="field" style="flex:0 0 220px; margin:0;">
+                <span class="lbl">Tenant Contact Form ID *</span>
+                <input id="tcDefFormId" placeholder="(discovering…)" />
+              </label>
+              <button class="btn ghost" id="btnTcDiscoverForm">Re-discover</button>
+              <button class="btn ghost" id="btnTcDefaultsSave">Save</button>
+              <span class="muted small" id="tcDefaultsStatus"></span>
+            </div>
+            <p class="muted small" style="margin:8px 0 0;"><b>Tenant Contact Form ID</b> auto-discovers from your <code>tenantcontact</code> module on first open. Sent as both <code>formId</code> and <code>actionFormId</code> in the payload (matches Facilio's UI).</p>
+          </div>
+        </details>
+
+        <div id="tenantcontactFormSelector" style="margin-top:6px; font-size:12px;"></div>
+      </div>
+
+      <div class="panel" style="padding: 0;">
+        <div class="grid-scroll">
+          <table class="grid" id="tcGrid">
+            <thead><tr id="tcGridHead"></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div style="padding: 10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+          <span class="muted small" id="tcRowCount">0 rows</span>
+          <button class="btn ghost" id="btnTcNewRow2">+ Add row</button>
+        </div>
+      </div>
+      </div>
+      <!-- ----- End: Tenant Contacts ----- -->
+
+      <!-- ----- Section: Tenant Units ----- -->
+      <div id="tenantSecUnits" class="hidden">
+      <div class="panel" style="padding: 12px 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h3 style="margin:0 0 4px;">Assign Tenant Units (Occupying Units)</h3>
+            <p class="muted small" style="margin:0;">Bulk-assign vacant units (buildings / floors / spaces) to existing tenants. Each row links one tenant to one or more units. Facilio's rule: the unit must be inside the tenant's <b>site</b> and must currently be <b>vacant</b> — pre-validation runs both checks before sending.</p>
+          </div>
+          <div class="card-actions" style="margin:0;">
+            <button class="btn ghost" id="btnTuTemplate">Template</button>
+            <button class="btn ghost" id="btnTuUpload">Upload</button>
+            <input type="file" id="tuExcelInput" accept=".xlsx,.xls,.csv" style="display:none" />
+            <button class="btn" id="btnTuNewRow">+ New row</button>
+            <button class="btn secondary" id="btnTuValidate">Validate all</button>
+            <button class="btn success" id="btnTuImport">Import all</button>
+            <button class="btn ghost" id="btnTuClearAll">Clear all</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="padding: 0;">
+        <div class="grid-scroll">
+          <table class="grid" id="tuGrid">
+            <thead><tr id="tuGridHead"></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div style="padding: 10px 14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+          <span class="muted small" id="tuRowCount">0 rows</span>
+          <button class="btn ghost" id="btnTuNewRow2">+ Add row</button>
+        </div>
+      </div>
+      </div>
+      <!-- ----- End: Tenant Units ----- -->
     </div>
   </div>
 
@@ -3279,7 +3463,11 @@ const PICKLIST_LOADERS = {
   skill:          () => loadFullPicklist("skill",         "skill"),
   // Routes — looked up so users can type a route name in PPM and it
   // resolves to a routes ID at validation time.
-  routes:         () => loadFullPicklist("routes",        "routes")
+  routes:         () => loadFullPicklist("routes",        "routes"),
+  // Tenants — used in Tenant Contact "Tenant" column. Tenant names can
+  // duplicate, so the datalist shows "Name #ID" and validation parses the
+  // suffix back to a numeric id.
+  tenant:         () => loadFullModuleList("tenant",      "tenant")
 };
 
 async function ensureDatalist(picklistKey) {
@@ -3307,9 +3495,17 @@ async function ensureDatalist(picklistKey) {
   if (!loader) return;
   try {
     const items = await loader();
-    dl.innerHTML = items
-      .map(it => `<option value="${escapeAttr(it.name || "")}"></option>`)
-      .join("");
+    // Tenants can share names across sites/orgs, so disambiguate by suffixing
+    // the numeric id. The validator strips "#<id>" back out before sending.
+    if (picklistKey === "tenant") {
+      dl.innerHTML = items
+        .map(it => `<option value="${escapeAttr((it.name || "") + " #" + it.id)}"></option>`)
+        .join("");
+    } else {
+      dl.innerHTML = items
+        .map(it => `<option value="${escapeAttr(it.name || "")}"></option>`)
+        .join("");
+    }
     dl.dataset.loaded = "1";
   } catch (e) {
     log(`Could not load ${picklistKey} list: ${e.message}`, "warn");
@@ -12403,6 +12599,9 @@ async function askAi(userQuestion, includeContext) {
     state.routeAssocQueue = [];
     state.routesByName = {};
     state.userQueue = [];
+    state.tenantQueue = [];
+    state.tcQueue = [];
+    state.tuQueue = [];
     $("#cfgApiKey").value = "";
     $("#loginStatus").textContent = "Signed out — saved API key wiped.";
     $("#app").classList.add("hidden");
@@ -13230,17 +13429,36 @@ function normaliseUserRecord(u, detail) {
   const userId = direct.id || det.id || userObj.id || direct.uid || null;
   const peopleId = direct.peopleId || peopleObj.id || det.peopleId || null;
 
-  // Status — combine userStatus + inviteAcceptStatus + invitedTime into a
-  // human-readable string.
-  const userStatus = det.userStatus ?? direct.userStatus ?? userObj.userStatus;
-  const inviteAccepted = det.inviteAcceptStatus ?? direct.inviteAcceptStatus ?? userObj.inviteAcceptStatus;
-  const invitedTime = det.invitedTime ?? direct.invitedTime ?? userObj.invitedTime;
+  // Status — use the timestamps on the inner user record (most reliable).
+  //   acceptedTime > 0           → invite was actually accepted
+  //   invitedTime  > 0 (not yet accepted) → "Invited (pending)" or "Expired" if old
+  //   invitedTime  <= 0          → "Not Invited"
+  // Fall back to inviteAcceptStatus / userStatus only if timestamps are absent.
+  const innerUser = direct.user || {};
+  const userStatus = det.userStatus ?? direct.userStatus ?? innerUser.userStatus;
+  const userVerified = det.userVerified ?? innerUser.userVerified;
+  const acceptedTime = (innerUser.acceptedTime ?? det.acceptedTime ?? -1);
+  const invitedTime  = (innerUser.invitedTime  ?? det.invitedTime  ?? direct.invitedTime ?? -1);
+  const inviteAccepted = det.inviteAcceptStatus ?? innerUser.inviteAcceptStatus;
+  // Facilio invitations expire after ~7 days by default — if invite was sent
+  // but never accepted and the timestamp is older than that, flag as expired.
+  const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+  const nowMs = Date.now();
   let statusStr = "";
-  if (userStatus === false) statusStr = "Inactive";
-  else if (inviteAccepted === true) statusStr = "Active (invite accepted)";
-  else if (inviteAccepted === false && invitedTime && invitedTime > 0) statusStr = "Invited (pending)";
-  else if (userStatus === true) statusStr = "Active";
-  else if (typeof userStatus !== "undefined" && userStatus !== null) statusStr = String(userStatus);
+  if (userStatus === false) {
+    statusStr = "Inactive";
+  } else if (acceptedTime && acceptedTime > 0) {
+    statusStr = "Active (invite accepted)";
+  } else if (inviteAccepted === true && userVerified === true) {
+    statusStr = "Active (invite accepted)";
+  } else if (invitedTime && invitedTime > 0) {
+    statusStr = (nowMs - invitedTime > SEVEN_DAYS) ? "Invitation Expired" : "Invited (pending)";
+  } else if (typeof userStatus !== "undefined" && userStatus !== null) {
+    // userStatus = true but no invite timestamps → user exists but never invited
+    statusStr = userStatus === true ? "Not Invited" : String(userStatus);
+  } else {
+    statusStr = "Not Invited";
+  }
 
   const flatIds = v => (Array.isArray(v) ? v.map(x => (x && typeof x === "object") ? (x.id ?? x.value) : x).filter(x => x != null) : []);
   return {
@@ -13412,7 +13630,37 @@ document.addEventListener("click", e => {
     document.getElementById("userSubClient")?.classList.toggle("hidden", which !== "client");
     document.getElementById("userSubOccupant")?.classList.toggle("hidden", which !== "occupant");
     document.getElementById("userSubBulkInvite")?.classList.toggle("hidden", which !== "bulkInvite");
-    document.getElementById("userSubExport")?.classList.toggle("hidden", which !== "export");
+    document.getElementById("userSubTenant")?.classList.toggle("hidden", which !== "tenant");
+    // When the Tenant sub-tab is opened, init all three inner sections
+    // (Add Tenants / Tenant Contacts / Tenant Units) so all grids are
+    // ready when the user switches between them.
+    if (which === "tenant") {
+      try { if (typeof initTenantsTab === "function") initTenantsTab(); } catch (_) {}
+      try { if (typeof initTcTab === "function") initTcTab(); } catch (_) {}
+      try { if (typeof initTuSection === "function") initTuSection(); } catch (_) {}
+    }
+    return;
+  }
+  // Inner section switcher for the Main App sub-tab (Add Users / Export).
+  const mSec = e.target.closest("#mainAppSecTabs .freq-tab[data-mainappsec]");
+  if (mSec) {
+    const which = mSec.dataset.mainappsec;
+    document.querySelectorAll("#mainAppSecTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === mSec));
+    document.getElementById("mainAppSecAdd")?.classList.toggle("hidden", which !== "add");
+    document.getElementById("mainAppSecExport")?.classList.toggle("hidden", which !== "export");
+    return;
+  }
+  // Inner section switcher for the Tenant sub-tab (Add Tenants / Tenant
+  // Contacts / Tenant Units).
+  const tSec = e.target.closest("#tenantSecTabs .freq-tab[data-tenantsec]");
+  if (tSec) {
+    const which = tSec.dataset.tenantsec;
+    document.querySelectorAll("#tenantSecTabs .freq-tab").forEach(b =>
+      b.classList.toggle("active", b === tSec));
+    document.getElementById("tenantSecAdd")?.classList.toggle("hidden", which !== "add");
+    document.getElementById("tenantSecContacts")?.classList.toggle("hidden", which !== "contacts");
+    document.getElementById("tenantSecUnits")?.classList.toggle("hidden", which !== "units");
     return;
   }
 
@@ -13505,6 +13753,864 @@ document.addEventListener("click", e => {
     return;
   }
 });
+
+// ============================================================
+// TENANTS MODULE — bulk-create tenants with primary contact embedded
+// ============================================================
+//
+// Captured POST (Mithun's Facilio org):
+//   POST /maintenance/api/v3/modules/tenant
+//   {
+//     data: {
+//       name, siteId, tenantType, description, inTime, outTime,
+//       primaryContactName, primaryContactEmail, primaryContactPhone,
+//       address: {...}, formId, actionFormId, mySignatureApplied: false
+//     },
+//     moduleName: "tenant"
+//   }
+// Response includes peopleTenantContacts[] — Facilio auto-creates the
+// primary contact record in the TENANT_CONTACT people module.
+state.tenantQueue = state.tenantQueue || [];
+state.activeTenantSub = state.activeTenantSub || "add";
+state.tenantDefaults = state.tenantDefaults || {};
+const TENANT_DEFAULTS_LS_KEY = "ppm-manager.tenantDefaults.v1";
+try {
+  const stored = localStorage.getItem(TENANT_DEFAULTS_LS_KEY);
+  if (stored) state.tenantDefaults = JSON.parse(stored);
+} catch (_) {}
+
+// Tenant type enum mapping. From the captured payload: tenantType:2 →
+// tenantTypeEnum:"RESIDENTIAL". 1 / 3 inferred from Facilio's standard set.
+const TENANT_TYPE_OPTIONS = [
+  { v: "1", l: "Commercial" },
+  { v: "2", l: "Residential" },
+  { v: "3", l: "Industrial" }
+];
+
+const TENANT_COLUMNS = [
+  { key:"_num",         label:"#",          kind:"num",     width:"w-num",    sticky:true },
+  { key:"_status",      label:"Status",     kind:"status",  width:"w-status", sticky:true },
+  { key:"name",         label:"Name *",     kind:"text",    width:"w-md" },
+  { key:"site",         label:"Site *",     kind:"text",    width:"w-md", picklist:"site" },
+  { key:"tenantType",   label:"Tenant Type *", kind:"select", width:"w-sm", options: TENANT_TYPE_OPTIONS },
+  { key:"primaryContactName",  label:"Primary Contact Name *",  kind:"text", width:"w-md" },
+  { key:"primaryContactEmail", label:"Primary Contact Email *", kind:"text", width:"w-lg" },
+  { key:"primaryContactPhone", label:"Primary Contact Phone",   kind:"text", width:"w-sm" },
+  { key:"inTime",       label:"Lease Start", kind:"text",   width:"w-sm", placeholder:"YYYY-MM-DD" },
+  { key:"outTime",      label:"Lease End",   kind:"text",   width:"w-sm", placeholder:"YYYY-MM-DD" },
+  { key:"description",  label:"Description", kind:"text",   width:"w-lg" },
+  // ---- Per-row portal access (record-level so each tenant can differ) ----
+  { key:"grantPortal",  label:"Grant Portal?", kind:"select", width:"w-sm",
+    options:[{ v:"yes", l:"Yes" }, { v:"no", l:"No" }] },
+  { key:"portalRole",   label:"Portal Role", kind:"text", width:"w-md",
+    placeholder:"Tenant User or 10866", picklist:"roles" },
+  { key:"permissionSets", label:"Permission Sets", kind:"text", width:"w-md",
+    placeholder:"comma-sep names or IDs (e.g. 142)" },
+  { key:"sendInvite",   label:"Send Invite?", kind:"select", width:"w-sm",
+    options:[{ v:"yes", l:"Yes" }, { v:"no", l:"No" }] },
+  { key:"_recordId",    label:"Tenant ID",   kind:"readonly", width:"w-sm" },
+  { key:"_actions",     label:"",            kind:"actions",  width:"w-actions" }
+];
+
+function blankTenantRow() {
+  return {
+    name:"", site:"", tenantType:"2",
+    primaryContactName:"", primaryContactEmail:"", primaryContactPhone:"",
+    inTime:"", outTime:"", description:"",
+    grantPortal:"yes", portalRole:"", permissionSets:"", sendInvite:"yes",
+    custom:{}, _recordId:"", _siteId: null,
+    _portalRoleId: null, _permissionSetIds: []
+  };
+}
+
+function renderTenantQueue() {
+  const head = $("#tenantGridHead");
+  if (!head) return;
+  const table = head.closest("table");
+  const existingColgroup = table.querySelector(":scope > colgroup");
+  if (existingColgroup) existingColgroup.remove();
+  delete head.dataset.built;
+  buildGridHead(head, TENANT_COLUMNS);
+  const tbody = $("#tenantGrid tbody");
+  tbody.innerHTML = state.tenantQueue.map((row, idx) =>
+    `<tr>` + TENANT_COLUMNS.map(c => renderCell(c, row, idx)).join("") + `</tr>`
+  ).join("");
+  $("#tenantRowCount").textContent = `${state.tenantQueue.length} row${state.tenantQueue.length === 1 ? "" : "s"}`;
+}
+
+// Convert a "YYYY-MM-DD" string into a Unix ms timestamp at start of day UTC.
+// Returns null for empty / invalid input. Lease dates are optional, so null
+// passes through as null in the payload.
+function tenantDateToMs(s) {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec((s || "").trim());
+  if (!m) return null;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], 0, 0, 0);
+}
+
+async function autoDiscoverTenantForm(force) {
+  const fld = document.getElementById("tenantDefFormId");
+  if (!fld) return;
+  if (!force && state.tenantDefaults?.formId && fld.value) return;
+  fld.placeholder = "(discovering…)";
+  try {
+    if (force) state.formsByModule.tenant = null;
+    const entry = await ensureModuleForms("tenant");
+    if (entry?.selectedFormId) {
+      fld.value = entry.selectedFormId;
+      state.tenantDefaults = state.tenantDefaults || {};
+      state.tenantDefaults.formId = String(entry.selectedFormId);
+      localStorage.setItem(TENANT_DEFAULTS_LS_KEY, JSON.stringify(state.tenantDefaults));
+      log(`tenant form discovered: ${entry.selectedFormId}`, "ok");
+    }
+  } catch (_) {}
+}
+
+async function validateTenantRow(row) {
+  const errors = [];
+  if (!row.name) errors.push("Name required");
+  if (!row.site) errors.push("Site required");
+  if (!row.tenantType) errors.push("Tenant Type required");
+  if (!row.primaryContactName) errors.push("Primary Contact Name required");
+  if (!row.primaryContactEmail) errors.push("Primary Contact Email required");
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.primaryContactEmail.trim()))
+    errors.push("Primary Contact Email looks invalid");
+  // Optional date validation — if provided, must parse to a real timestamp.
+  if (row.inTime  && !tenantDateToMs(row.inTime))  errors.push("Lease Start: use YYYY-MM-DD");
+  if (row.outTime && !tenantDateToMs(row.outTime)) errors.push("Lease End: use YYYY-MM-DD");
+  if (errors.length) {
+    row.status = { kind:"error", text: errors.join("; ") };
+    return false;
+  }
+  try {
+    // Site name → siteId
+    if (/^\d+$/.test(String(row.site).trim())) {
+      row._siteId = Number(String(row.site).trim());
+    } else {
+      const id = await findInList("site", "site", row.site);
+      if (!id) throw new Error(`Site not found: ${row.site}`);
+      row._siteId = Number(id);
+    }
+    // Portal access — only resolve role + permission sets if granting.
+    row._portalRoleId = null;
+    row._permissionSetIds = [];
+    if (row.grantPortal === "yes") {
+      if (!row.portalRole) throw new Error("Portal Role required when Grant Portal = Yes");
+      // Role lookup uses the shared IAM cache (populated by Lookup tables on
+      // Main App tab) — accepts numeric IDs as a fallback.
+      const rid = await findIamIdByName("roles", "role", row.portalRole);
+      if (!rid) throw new Error(`Portal Role not found: ${row.portalRole}. Paste numeric ID or load Roles lookup on Main App tab.`);
+      row._portalRoleId = Number(rid);
+      // Permission Sets — comma-separated, names or numeric IDs.
+      if (row.permissionSets) {
+        for (const n of row.permissionSets.split(",").map(s => s.trim()).filter(Boolean)) {
+          const id = await findIamIdByName("permissionSets", "permissionSet", n);
+          if (!id) throw new Error(`Permission set not found: ${n}. Paste numeric ID or load Permission Sets lookup on Main App tab.`);
+          row._permissionSetIds.push(Number(id));
+        }
+      }
+    }
+  } catch (e) {
+    row.status = { kind:"error", text: e.message };
+    return false;
+  }
+  row.status = { kind:"valid", text:"Valid" };
+  return true;
+}
+
+function buildTenantPayload(row) {
+  const formId = Number(state.tenantDefaults?.formId || state.formsByModule?.tenant?.selectedFormId || 0);
+  const data = {
+    avatarId: null,
+    name: row.name,
+    description: row.description || null,
+    siteId: row._siteId,
+    primaryContactName:  row.primaryContactName,
+    primaryContactEmail: row.primaryContactEmail,
+    primaryContactPhone: row.primaryContactPhone || null,
+    tenantType: Number(row.tenantType),
+    inTime:  tenantDateToMs(row.inTime),
+    outTime: tenantDateToMs(row.outTime),
+    address: {
+      street: null, city: null, state: null, zip: null,
+      lat: 1.1, lng: 1.1, country: null
+    },
+    mySignatureApplied: false
+  };
+  if (formId) { data.formId = formId; data.actionFormId = formId; }
+  return { data, moduleName: "tenant" };
+}
+
+// After the tenant is created, optionally grant the auto-created primary
+// contact Tenant Portal access. Mirrors Facilio's UI flow ("Give portal
+// access" button on a tenant contact) — captured payload was:
+//   {"data":{"id":<contactId>,"rolesMap":{"tenant":<roleId>},
+//     "permissionSets":[...],"selectedSecuritypolicy":-1,
+//     "sendInvitation":<bool>,"password":null,"isTenantPortalAccess":true},
+//    "moduleName":"tenantcontact","id":<contactId>}
+async function grantTenantPortalAccess(contactId, roleId, permissionSetIds, sendInvite) {
+  if (!roleId) throw new Error("Portal Role ID missing — set the Portal Role column on the row");
+  const body = {
+    data: {
+      id: Number(contactId),
+      rolesMap: { tenant: Number(roleId) },
+      permissionSets: (permissionSetIds || []).map(Number),
+      selectedSecuritypolicy: -1,
+      sendInvitation: !!sendInvite,
+      password: null,
+      isTenantPortalAccess: true
+    },
+    moduleName: "tenantcontact",
+    id: Number(contactId)
+  };
+  // PATCH the tenant-contact record. URL is the v3 module-record update path.
+  return api("PATCH", `maintenance/api/v3/modules/tenantcontact/${contactId}`, body);
+}
+
+async function importTenantRow(row) {
+  const ok = await validateTenantRow(row);
+  if (!ok) return;
+  if (!state.tenantDefaults?.formId) {
+    row.status = { kind:"error", text:"Tenant Form ID not set in Defaults. Click Re-discover or paste it manually." };
+    renderTenantQueue();
+    return;
+  }
+  row.status = { kind:"running", text:"Creating tenant…" };
+  renderTenantQueue();
+  let newId = null, contactId = null;
+  try {
+    const body = buildTenantPayload(row);
+    const res = await api("POST", "maintenance/api/v3/modules/tenant", body);
+    const root = res?.data || res;
+    const tenant = root.tenant || root.data?.tenant || root;
+    newId = tenant?.id || tenant?.tenantId || null;
+    contactId = tenant?.peopleTenantContacts?.[0]?.id || null;
+    if (newId) {
+      row._recordId = String(newId);
+      row.status = { kind:"success", text:`Tenant ${newId}` + (contactId ? ` + contact ${contactId}` : "") };
+    } else {
+      row.status = { kind:"success", text:"Tenant created" };
+    }
+    renderTenantQueue();
+  } catch (e) {
+    row.status = { kind:"error", text: e.message };
+    renderTenantQueue();
+    return;
+  }
+  // Optionally grant portal access to the auto-created primary contact —
+  // entirely driven by per-row columns (Grant Portal?, Portal Role,
+  // Permission Sets, Send Invite?). No global defaults involved.
+  if (row.grantPortal === "yes" && contactId) {
+    const sendInvite = row.sendInvite !== "no";
+    row.status = { kind:"running", text:`Tenant ${newId} created. Granting portal access…` };
+    renderTenantQueue();
+    try {
+      await grantTenantPortalAccess(contactId, row._portalRoleId, row._permissionSetIds, sendInvite);
+      row.status = {
+        kind:"success",
+        text: `Tenant ${newId} + contact ${contactId} + portal access${sendInvite ? " (invite sent)" : " (silent)"}`
+      };
+    } catch (e) {
+      row.status = {
+        kind:"warn",
+        text: `Tenant ${newId} created but portal access failed: ${e.message}. You can grant it manually in Facilio.`
+      };
+    }
+    renderTenantQueue();
+  }
+}
+
+// Delegated click handlers for the Tenants tab.
+document.addEventListener("click", async e => {
+  // Tenants sub-tabs
+  // (Old tabTenants handler removed — Tenant + Tenant Contact now live as
+  // sub-tabs under Users, handled by the Users sub-tab delegated handler
+  // earlier in the file.)
+  // Defaults — Re-discover form
+  if (e.target.id === "btnTenantDiscoverForm") {
+    autoDiscoverTenantForm(true);
+    return;
+  }
+  // Defaults — Save (only the Tenant Form ID is global; everything else is
+  // per-row on the grid).
+  if (e.target.id === "btnTenantDefaultsSave") {
+    state.tenantDefaults = state.tenantDefaults || {};
+    state.tenantDefaults.formId = (document.getElementById("tenantDefFormId")?.value || "").trim();
+    localStorage.setItem(TENANT_DEFAULTS_LS_KEY, JSON.stringify(state.tenantDefaults));
+    const st = document.getElementById("tenantDefaultsStatus");
+    if (st) { st.textContent = "✓ saved"; setTimeout(() => st.textContent = "", 2500); }
+    return;
+  }
+  // + New row
+  if (e.target.id === "btnTenantNewRow" || e.target.id === "btnTenantNewRow2") {
+    state.tenantQueue.push(blankTenantRow());
+    renderTenantQueue();
+    return;
+  }
+  // Clear all
+  if (e.target.id === "btnTenantClearAll") {
+    if (confirm("Clear all tenant rows?")) {
+      state.tenantQueue = [blankTenantRow()];
+      renderTenantQueue();
+    }
+    return;
+  }
+  // Validate all
+  if (e.target.id === "btnTenantValidate") {
+    for (const r of state.tenantQueue) {
+      r.status = { kind:"running", text:"Validating…" };
+      renderTenantQueue();
+      await validateTenantRow(r);
+      renderTenantQueue();
+    }
+    return;
+  }
+  // Import all
+  if (e.target.id === "btnTenantImport") {
+    for (const r of state.tenantQueue) {
+      if (r.status?.kind === "success") continue;
+      await importTenantRow(r);
+    }
+    showToast("Tenant import complete");
+    return;
+  }
+});
+
+function initTenantsTab() {
+  if (state.tenantQueue.length === 0) state.tenantQueue.push(blankTenantRow());
+  const f = document.getElementById("tenantDefFormId");
+  if (f && !f.value && state.tenantDefaults?.formId) f.value = state.tenantDefaults.formId;
+  bindGridInputs(
+    "#tenantGrid",
+    () => state.tenantQueue,
+    () => TENANT_COLUMNS,
+    blankTenantRow,
+    renderTenantQueue
+  );
+  renderTenantQueue();
+  // Auto-discover form ID on first open if not saved yet.
+  if (!state.tenantDefaults?.formId) autoDiscoverTenantForm(false);
+  // Pre-load the site picklist so the typeahead is ready.
+  try { ensureDatalist("site"); } catch (_) {}
+  // Render the field-list panel so users can fetch + toggle custom fields.
+  try {
+    if (typeof initModuleForms === "function") initModuleForms("tenant");
+    if (typeof renderFormSelector === "function") renderFormSelector("tenant");
+  } catch (_) {}
+}
+
+// ============================================================
+// TENANT CONTACTS MODULE — bulk-add extra contacts to existing tenants
+// ============================================================
+//
+// Captured POST (create contact):
+//   POST /maintenance/api/v3/modules/tenantcontact
+//   { data: { name, email, phone, tenant:{id}, isPrimaryContact, formId,
+//             actionFormId, mySignatureApplied:false },
+//     moduleName: "tenantcontact" }
+//
+// Captured PATCH (grant portal access to a contact):
+//   PATCH /maintenance/api/v3/modules/tenantcontact/<id>
+//   { data: { id, rolesMap:{tenant:<roleId>}, permissionSets:[...],
+//             selectedSecuritypolicy:<id or -1>, sendInvitation:<bool>,
+//             password:null, isTenantPortalAccess:true },
+//     moduleName: "tenantcontact", id: <id> }
+state.tcQueue = state.tcQueue || [];
+state.tcDefaults = state.tcDefaults || {};
+const TC_DEFAULTS_LS_KEY = "ppm-manager.tcDefaults.v1";
+try {
+  const stored = localStorage.getItem(TC_DEFAULTS_LS_KEY);
+  if (stored) state.tcDefaults = JSON.parse(stored);
+} catch (_) {}
+
+const TC_COLUMNS = [
+  { key:"_num",         label:"#",       kind:"num",     width:"w-num",    sticky:true },
+  { key:"_status",      label:"Status",  kind:"status",  width:"w-status", sticky:true },
+  { key:"name",         label:"Name *",  kind:"text",    width:"w-md" },
+  { key:"email",        label:"Email *", kind:"text",    width:"w-lg" },
+  { key:"phone",        label:"Phone",   kind:"text",    width:"w-sm" },
+  // Link the contact to an existing tenant — typeahead from the tenant
+  // module. Selecting a suggestion fills "Name #<id>". User can also paste
+  // a numeric ID directly. Lookup format disambiguates duplicate names.
+  { key:"tenant",       label:"Tenant *", kind:"text",   width:"w-md",
+    placeholder:"Start typing tenant name…", picklist:"tenant" },
+  { key:"isPrimary",    label:"Is Primary?", kind:"select", width:"w-sm",
+    options:[{ v:"no", l:"No" }, { v:"yes", l:"Yes" }] },
+  // ---- Per-row portal access (same shape as tenant flow) ----
+  { key:"grantPortal",  label:"Grant Portal?", kind:"select", width:"w-sm",
+    options:[{ v:"yes", l:"Yes" }, { v:"no", l:"No" }] },
+  { key:"portalRole",   label:"Portal Role", kind:"text", width:"w-md",
+    placeholder:"Tenant User or 10866", picklist:"roles" },
+  { key:"permissionSets", label:"Permission Sets", kind:"text", width:"w-md",
+    placeholder:"comma-sep names or IDs" },
+  { key:"securityPolicyId", label:"Security Policy", kind:"text", width:"w-sm",
+    placeholder:"-1 or numeric id" },
+  { key:"sendInvite",   label:"Send Invite?", kind:"select", width:"w-sm",
+    options:[{ v:"yes", l:"Yes" }, { v:"no", l:"No" }] },
+  { key:"_recordId",    label:"Contact ID", kind:"readonly", width:"w-sm" },
+  { key:"_actions",     label:"",           kind:"actions",  width:"w-actions" }
+];
+
+function blankTcRow() {
+  return {
+    name:"", email:"", phone:"", tenant:"", isPrimary:"no",
+    grantPortal:"no", portalRole:"", permissionSets:"",
+    securityPolicyId:"-1", sendInvite:"yes",
+    custom:{}, _recordId:"", _tenantId: null,
+    _portalRoleId: null, _permissionSetIds: []
+  };
+}
+
+function renderTcQueue() {
+  const head = $("#tcGridHead");
+  if (!head) return;
+  const table = head.closest("table");
+  const existingColgroup = table.querySelector(":scope > colgroup");
+  if (existingColgroup) existingColgroup.remove();
+  delete head.dataset.built;
+  buildGridHead(head, TC_COLUMNS);
+  const tbody = $("#tcGrid tbody");
+  tbody.innerHTML = state.tcQueue.map((row, idx) =>
+    `<tr>` + TC_COLUMNS.map(c => renderCell(c, row, idx)).join("") + `</tr>`
+  ).join("");
+  $("#tcRowCount").textContent = `${state.tcQueue.length} row${state.tcQueue.length === 1 ? "" : "s"}`;
+}
+
+// Resolve a tenant identifier to a numeric tenant id. Accepts any of:
+//   "45088"           → 45088
+//   "Mithun #45088"   → 45088   (the format the datalist suggestions use)
+//   "Mithun"          → looked up by name; ambiguous if duplicate names exist
+async function resolveTenantId(input) {
+  const trimmed = String(input || "").trim();
+  if (!trimmed) return null;
+  // Pure numeric → passthrough.
+  if (/^\d+$/.test(trimmed)) return Number(trimmed);
+  // "Name #<id>" → trailing id wins (datalist suggestion picked).
+  const suffix = trimmed.match(/#\s*(\d+)\s*$/);
+  if (suffix) return Number(suffix[1]);
+  // Name lookup — load the tenant list once and find by case-insensitive
+  // name match. If there are duplicates, error out and ask the user to
+  // disambiguate by picking from the suggestion (which appends "#<id>").
+  if (!state.cache.tenant || !state.cache.tenant.length) {
+    await loadFullModuleList("tenant", "tenant").catch(() => []);
+  }
+  const target = trimmed.toLowerCase();
+  const matches = (state.cache.tenant || []).filter(t => (t.name || "").trim().toLowerCase() === target);
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return Number(matches[0].id);
+  throw new Error(`Ambiguous tenant name "${trimmed}" — ${matches.length} tenants have this name. Pick from the dropdown (it appends "#<id>" so duplicates are distinguishable) or paste the numeric ID.`);
+}
+
+async function autoDiscoverTcForm(force) {
+  const fld = document.getElementById("tcDefFormId");
+  if (!fld) return;
+  if (!force && state.tcDefaults?.formId && fld.value) return;
+  fld.placeholder = "(discovering…)";
+  try {
+    if (force) state.formsByModule.tenantcontact = null;
+    const entry = await ensureModuleForms("tenantcontact");
+    if (entry?.selectedFormId) {
+      fld.value = entry.selectedFormId;
+      state.tcDefaults = state.tcDefaults || {};
+      state.tcDefaults.formId = String(entry.selectedFormId);
+      localStorage.setItem(TC_DEFAULTS_LS_KEY, JSON.stringify(state.tcDefaults));
+      log(`tenantcontact form discovered: ${entry.selectedFormId}`, "ok");
+    }
+  } catch (_) {}
+}
+
+async function validateTcRow(row) {
+  const errors = [];
+  if (!row.name) errors.push("Name required");
+  if (!row.email) errors.push("Email required");
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email.trim()))
+    errors.push("Email looks invalid");
+  if (!row.tenant) errors.push("Tenant required (name or numeric ID)");
+  if (errors.length) { row.status = { kind:"error", text: errors.join("; ") }; return false; }
+  try {
+    // Tenant lookup
+    row._tenantId = await resolveTenantId(row.tenant);
+    if (!row._tenantId) throw new Error(`Tenant not found: ${row.tenant}`);
+    // Portal access fields — only required when granting.
+    row._portalRoleId = null;
+    row._permissionSetIds = [];
+    if (row.grantPortal === "yes") {
+      if (!row.portalRole) throw new Error("Portal Role required when Grant Portal = Yes");
+      const rid = await findIamIdByName("roles", "role", row.portalRole);
+      if (!rid) throw new Error(`Portal Role not found: ${row.portalRole}`);
+      row._portalRoleId = Number(rid);
+      if (row.permissionSets) {
+        for (const n of row.permissionSets.split(",").map(s => s.trim()).filter(Boolean)) {
+          const id = await findIamIdByName("permissionSets", "permissionSet", n);
+          if (!id) throw new Error(`Permission set not found: ${n}`);
+          row._permissionSetIds.push(Number(id));
+        }
+      }
+    }
+  } catch (e) { row.status = { kind:"error", text: e.message }; return false; }
+  row.status = { kind:"valid", text:"Valid" };
+  return true;
+}
+
+function buildTcPayload(row) {
+  const formId = Number(state.tcDefaults?.formId || state.formsByModule?.tenantcontact?.selectedFormId || 0);
+  const data = {
+    name: row.name,
+    email: row.email,
+    phone: row.phone || null,
+    tenant: { id: row._tenantId },
+    isPrimaryContact: row.isPrimary === "yes" ? true : null,
+    mySignatureApplied: false
+  };
+  if (formId) { data.formId = formId; data.actionFormId = formId; }
+  return { data, moduleName: "tenantcontact" };
+}
+
+// Reuse the captured grant-portal-access shape, with optional security
+// policy (the new capture shows selectedSecuritypolicy can be a real id
+// like 1190, not just -1).
+async function grantTcPortalAccess(contactId, roleId, permissionSetIds, securityPolicyId, sendInvite) {
+  if (!roleId) throw new Error("Portal Role ID missing");
+  const body = {
+    data: {
+      id: Number(contactId),
+      rolesMap: { tenant: Number(roleId) },
+      permissionSets: (permissionSetIds || []).map(Number),
+      selectedSecuritypolicy: Number(securityPolicyId ?? -1),
+      sendInvitation: !!sendInvite,
+      password: null,
+      isTenantPortalAccess: true
+    },
+    moduleName: "tenantcontact",
+    id: Number(contactId)
+  };
+  return api("PATCH", `maintenance/api/v3/modules/tenantcontact/${contactId}`, body);
+}
+
+async function importTcRow(row) {
+  const ok = await validateTcRow(row);
+  if (!ok) { renderTcQueue(); return; }
+  if (!state.tcDefaults?.formId) {
+    row.status = { kind:"error", text:"Tenant Contact Form ID not set in Defaults." };
+    renderTcQueue(); return;
+  }
+  row.status = { kind:"running", text:"Creating contact…" };
+  renderTcQueue();
+  let contactId = null;
+  try {
+    const body = buildTcPayload(row);
+    const res = await api("POST", "maintenance/api/v3/modules/tenantcontact", body);
+    const root = res?.data || res;
+    const contact = root.tenantcontact || root.data?.tenantcontact || root;
+    contactId = contact?.id || null;
+    if (contactId) {
+      row._recordId = String(contactId);
+      row.status = { kind:"success", text:`Contact ${contactId} linked to tenant ${row._tenantId}` };
+    } else {
+      row.status = { kind:"success", text:"Contact created" };
+    }
+    renderTcQueue();
+  } catch (e) {
+    row.status = { kind:"error", text: e.message };
+    renderTcQueue(); return;
+  }
+  // Optional portal access — same as tenant flow.
+  if (row.grantPortal === "yes" && contactId) {
+    const sendInvite = row.sendInvite !== "no";
+    const secPolicy = (row.securityPolicyId || "").trim() === "" ? -1 : Number(row.securityPolicyId);
+    row.status = { kind:"running", text:`Contact ${contactId} created. Granting portal access…` };
+    renderTcQueue();
+    try {
+      await grantTcPortalAccess(contactId, row._portalRoleId, row._permissionSetIds, secPolicy, sendInvite);
+      row.status = {
+        kind:"success",
+        text: `Contact ${contactId} + portal access${sendInvite ? " (invite sent)" : " (silent)"}`
+      };
+    } catch (e) {
+      row.status = {
+        kind:"warn",
+        text: `Contact ${contactId} created but portal access failed: ${e.message}`
+      };
+    }
+    renderTcQueue();
+  }
+}
+
+// Delegated click handlers for Tenant Contact tab.
+document.addEventListener("click", async e => {
+  if (e.target.id === "btnTcDiscoverForm") { autoDiscoverTcForm(true); return; }
+  if (e.target.id === "btnTcDefaultsSave") {
+    state.tcDefaults = state.tcDefaults || {};
+    state.tcDefaults.formId = (document.getElementById("tcDefFormId")?.value || "").trim();
+    localStorage.setItem(TC_DEFAULTS_LS_KEY, JSON.stringify(state.tcDefaults));
+    const st = document.getElementById("tcDefaultsStatus");
+    if (st) { st.textContent = "✓ saved"; setTimeout(() => st.textContent = "", 2500); }
+    return;
+  }
+  if (e.target.id === "btnTcNewRow" || e.target.id === "btnTcNewRow2") {
+    state.tcQueue.push(blankTcRow()); renderTcQueue(); return;
+  }
+  if (e.target.id === "btnTcClearAll") {
+    if (confirm("Clear all tenant-contact rows?")) {
+      state.tcQueue = [blankTcRow()]; renderTcQueue();
+    }
+    return;
+  }
+  if (e.target.id === "btnTcValidate") {
+    for (const r of state.tcQueue) {
+      r.status = { kind:"running", text:"Validating…" }; renderTcQueue();
+      await validateTcRow(r); renderTcQueue();
+    }
+    return;
+  }
+  if (e.target.id === "btnTcImport") {
+    for (const r of state.tcQueue) {
+      if (r.status?.kind === "success") continue;
+      await importTcRow(r);
+    }
+    showToast("Tenant Contact import complete");
+    return;
+  }
+});
+
+// ============================================================
+// TENANT UNITS — assign occupying spaces (buildings/floors/spaces) to tenants
+// ============================================================
+//
+// Captured PATCH (assign a space to a tenant — from Facilio UI):
+//   URL:  /maintenance/api/v3/modules/tenant/<tenantId>?spacesUpdate=true
+//   Body: { "data": { "spaces": [ { "id": <spaceId> } ] } }
+// Constraints (server-side, but we pre-check):
+//   - Space must belong to the tenant's site
+//   - Space must currently be vacant (currentlyOccupied = false)
+state.tuQueue = state.tuQueue || [];
+
+const TU_COLUMNS = [
+  { key:"_num",     label:"#",       kind:"num",     width:"w-num",    sticky:true },
+  { key:"_status",  label:"Status",  kind:"status",  width:"w-status", sticky:true },
+  { key:"tenant",   label:"Tenant *", kind:"text",   width:"w-md",
+    placeholder:"Start typing tenant name…", picklist:"tenant" },
+  { key:"units",    label:"Units *",  kind:"text",   width:"w-lg",
+    placeholder:"Comma-sep space names or IDs" },
+  { key:"_recordId", label:"Linked", kind:"readonly", width:"w-sm" },
+  { key:"_actions",  label:"",       kind:"actions",  width:"w-actions" }
+];
+
+function blankTuRow() {
+  return {
+    tenant:"", units:"",
+    custom:{}, _recordId:"", _tenantId: null, _siteId: null,
+    _unitIds: []
+  };
+}
+
+function renderTuQueue() {
+  const head = $("#tuGridHead");
+  if (!head) return;
+  const table = head.closest("table");
+  const existingColgroup = table.querySelector(":scope > colgroup");
+  if (existingColgroup) existingColgroup.remove();
+  delete head.dataset.built;
+  buildGridHead(head, TU_COLUMNS);
+  const tbody = $("#tuGrid tbody");
+  tbody.innerHTML = state.tuQueue.map((row, idx) =>
+    `<tr>` + TU_COLUMNS.map(c => renderCell(c, row, idx)).join("") + `</tr>`
+  ).join("");
+  $("#tuRowCount").textContent = `${state.tuQueue.length} row${state.tuQueue.length === 1 ? "" : "s"}`;
+}
+
+// Fetch a single tenant record so we can read its siteId. Tries the v3
+// module-record endpoint; falls back to scanning the cached tenant list.
+async function fetchTenantSiteId(tenantId) {
+  try {
+    const res = await api("GET", `maintenance/api/v3/modules/tenant/${tenantId}`);
+    let root = res;
+    if (root && root.data && typeof root.data === "object") root = root.data;
+    if (root && root.result && typeof root.result === "object") root = root.result;
+    const t = root.tenant || root.data?.tenant || root;
+    if (t && (t.siteId || t.site)) return Number(t.siteId || (t.site && t.site.id));
+  } catch (_) {}
+  // Fallback — use whatever's cached in state.cache.tenant.
+  const hit = (state.cache.tenant || []).find(t => Number(t.id) === Number(tenantId));
+  return hit?.siteId || hit?.site?.id || null;
+}
+
+// Fetch a single space record to read siteId, currentlyOccupied, AND which
+// tenant (if any) already has it assigned. The tenant association can live
+// under several field names depending on Facilio version — try them all.
+async function fetchSpaceMeta(spaceId) {
+  try {
+    const res = await api("GET", `maintenance/api/v3/modules/space/${spaceId}`);
+    let root = res;
+    if (root && root.data && typeof root.data === "object") root = root.data;
+    if (root && root.result && typeof root.result === "object") root = root.result;
+    const s = root.space || root.data?.space || root;
+    if (s && (s.id || s.siteId)) {
+      // Tenant assignment can show up as s.tenant.id, s.tenantId, or under
+      // a "tenants" array depending on the module configuration.
+      let assignedTenantId = null;
+      if (s.tenant && (s.tenant.id || s.tenant.tenantId)) {
+        assignedTenantId = Number(s.tenant.id || s.tenant.tenantId);
+      } else if (s.tenantId) {
+        assignedTenantId = Number(s.tenantId);
+      } else if (Array.isArray(s.tenants) && s.tenants.length) {
+        const first = s.tenants[0];
+        assignedTenantId = Number(first.id || first.tenantId);
+      }
+      return {
+        id: Number(s.id),
+        siteId: Number(s.siteId || (s.site && s.site.id)) || null,
+        currentlyOccupied: !!s.currentlyOccupied,
+        assignedTenantId,
+        name: s.name || ""
+      };
+    }
+  } catch (_) {}
+  return null;
+}
+
+async function validateTuRow(row) {
+  const errors = [];
+  if (!row.tenant) errors.push("Tenant required");
+  if (!row.units) errors.push("Units required");
+  if (errors.length) { row.status = { kind:"error", text: errors.join("; ") }; return false; }
+  try {
+    // 1) Resolve tenant → tenantId + siteId
+    row._tenantId = await resolveTenantId(row.tenant);
+    if (!row._tenantId) throw new Error(`Tenant not found: ${row.tenant}`);
+    row._siteId = await fetchTenantSiteId(row._tenantId);
+    if (!row._siteId) throw new Error(`Could not read site for tenant ${row._tenantId} — paste the tenant's numeric ID or check it exists.`);
+    // 2) Resolve each unit → spaceId, then verify site + vacancy
+    row._unitIds = [];
+    const units = row.units.split(",").map(s => s.trim()).filter(Boolean);
+    for (const u of units) {
+      let spaceId = null;
+      // Accept "Name #<id>" (datalist format), or numeric, or plain name.
+      const suffix = u.match(/#\s*(\d+)\s*$/);
+      if (/^\d+$/.test(u)) spaceId = Number(u);
+      else if (suffix) spaceId = Number(suffix[1]);
+      else {
+        // Lookup by name in the cached space list.
+        if (!state.cache.space || !state.cache.space.length) {
+          await loadFullModuleList("space", "space").catch(() => []);
+        }
+        const target = u.toLowerCase();
+        const matches = (state.cache.space || []).filter(s => (s.name || "").trim().toLowerCase() === target);
+        if (matches.length === 0) throw new Error(`Unit not found: ${u}`);
+        if (matches.length > 1) throw new Error(`Ambiguous unit name "${u}" — paste its numeric ID or pick from the suggestions.`);
+        spaceId = Number(matches[0].id);
+      }
+      // Pre-validation: fetch the space and run all four checks.
+      const meta = await fetchSpaceMeta(spaceId);
+      if (!meta) throw new Error(`Unit #${spaceId} not found in Facilio`);
+      const nameSuffix = meta.name ? ` ("${meta.name}")` : "";
+      // 1) Site match
+      if (meta.siteId && meta.siteId !== row._siteId) {
+        throw new Error(`Unit #${spaceId}${nameSuffix} is in site ${meta.siteId}, but tenant's site is ${row._siteId}. Pick a unit in the same site.`);
+      }
+      // 2) Already assigned to THIS tenant → no-op
+      if (meta.assignedTenantId && meta.assignedTenantId === row._tenantId) {
+        throw new Error(`Unit #${spaceId}${nameSuffix} is already assigned to this tenant (${row._tenantId}). Nothing to do — skip this row.`);
+      }
+      // 3) Already assigned to ANOTHER tenant → fail with that tenant's id
+      if (meta.assignedTenantId && meta.assignedTenantId !== row._tenantId) {
+        throw new Error(`Unit #${spaceId}${nameSuffix} is already assigned to a different tenant (id ${meta.assignedTenantId}). Vacate it on that tenant first, or pick a different unit.`);
+      }
+      // 4) Occupied flag (catches anything not covered above)
+      if (meta.currentlyOccupied) {
+        throw new Error(`Unit #${spaceId}${nameSuffix} is currently occupied. Pick a vacant unit.`);
+      }
+      row._unitIds.push(spaceId);
+    }
+  } catch (e) {
+    row.status = { kind:"error", text: e.message };
+    return false;
+  }
+  row.status = { kind:"valid", text:"Valid" };
+  return true;
+}
+
+async function importTuRow(row) {
+  const ok = await validateTuRow(row);
+  if (!ok) { renderTuQueue(); return; }
+  row.status = { kind:"running", text:"Assigning units…" };
+  renderTuQueue();
+  try {
+    const body = { data: { spaces: row._unitIds.map(id => ({ id })) } };
+    await api("PATCH", `maintenance/api/v3/modules/tenant/${row._tenantId}?spacesUpdate=true`, body);
+    row._recordId = String(row._tenantId);
+    row.status = {
+      kind:"success",
+      text: `Tenant ${row._tenantId} ← ${row._unitIds.length} unit${row._unitIds.length === 1 ? "" : "s"} (${row._unitIds.join(", ")})`
+    };
+  } catch (e) {
+    row.status = { kind:"error", text: e.message };
+  }
+  renderTuQueue();
+}
+
+// Delegated click handlers for Tenant Units.
+document.addEventListener("click", async e => {
+  if (e.target.id === "btnTuNewRow" || e.target.id === "btnTuNewRow2") {
+    state.tuQueue.push(blankTuRow()); renderTuQueue(); return;
+  }
+  if (e.target.id === "btnTuClearAll") {
+    if (confirm("Clear all tenant-unit rows?")) {
+      state.tuQueue = [blankTuRow()]; renderTuQueue();
+    }
+    return;
+  }
+  if (e.target.id === "btnTuValidate") {
+    for (const r of state.tuQueue) {
+      r.status = { kind:"running", text:"Validating…" }; renderTuQueue();
+      await validateTuRow(r); renderTuQueue();
+    }
+    return;
+  }
+  if (e.target.id === "btnTuImport") {
+    for (const r of state.tuQueue) {
+      if (r.status?.kind === "success") continue;
+      await importTuRow(r);
+    }
+    showToast("Tenant Unit assignment complete");
+    return;
+  }
+});
+
+function initTuSection() {
+  if (state.tuQueue.length === 0) state.tuQueue.push(blankTuRow());
+  bindGridInputs(
+    "#tuGrid",
+    () => state.tuQueue,
+    () => TU_COLUMNS,
+    blankTuRow,
+    renderTuQueue
+  );
+  renderTuQueue();
+  // Preload tenant + space datalists so typeahead is instant.
+  try { ensureDatalist("tenant"); } catch (_) {}
+  try { ensureDatalist("space");  } catch (_) {}
+}
+
+function initTcTab() {
+  if (state.tcQueue.length === 0) state.tcQueue.push(blankTcRow());
+  const f = document.getElementById("tcDefFormId");
+  if (f && !f.value && state.tcDefaults?.formId) f.value = state.tcDefaults.formId;
+  bindGridInputs(
+    "#tcGrid",
+    () => state.tcQueue,
+    () => TC_COLUMNS,
+    blankTcRow,
+    renderTcQueue
+  );
+  renderTcQueue();
+  if (!state.tcDefaults?.formId) autoDiscoverTcForm(false);
+  // Pre-load the tenant datalist so typeahead is ready immediately.
+  try { ensureDatalist("tenant"); } catch (_) {}
+  try {
+    if (typeof initModuleForms === "function") initModuleForms("tenantcontact");
+    if (typeof renderFormSelector === "function") renderFormSelector("tenantcontact");
+  } catch (_) {}
+}
 
 // Initialise Users grid when its tab is opened.
 function initUsersTab() {
